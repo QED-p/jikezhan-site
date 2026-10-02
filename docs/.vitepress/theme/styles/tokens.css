@@ -1,0 +1,116 @@
+:root {
+  --hud-font: 'Noto Sans SC', 'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif;
+  --hud-mono: 'JetBrains Mono', 'Noto Sans Mono', monospace;
+}
+
+[data-palette='violet'] {
+  --hud-bg: #0b0916;
+  --hud-page: #06050c;
+  --hud-ink: #d6ceee;
+  --hud-body: #9993ad;
+  --hud-dim: #6f6494;
+  --hud-faint: #2a2444;
+  --hud-hair: #29243c;
+  --hud-panel: #211c37;
+  --hud-tint: #19152b;
+  --hud-accent: #8a6fe8;
+  --hud-hot: #e9e0ff;
+  --hud-warn: #d9b23c;
+  --hud-crit: #e05060;
+  --hud-good: #78a870;
+}
+
+[data-palette='cyan'] {
+  --hud-bg: #0a1114;
+  --hud-page: #06090b;
+  --hud-ink: #c2d4d6;
+  --hud-body: #8b999c;
+  --hud-dim: #5c7274;
+  --hud-faint: #20302f;
+  --hud-hair: #232e31;
+  --hud-panel: #1a2727;
+  --hud-tint: #141f20;
+  --hud-accent: #5fd3d8;
+  --hud-hot: #eaf6f6;
+  --hud-warn: #d9b23c;
+  --hud-crit: #d24838;
+  --hud-good: #5fa85a;
+}
+
+[data-palette='green'] {
+  --hud-bg: #0a100c;
+  --hud-page: #060907;
+  --hud-ink: #c6d8c0;
+  --hud-body: #8e9c8a;
+  --hud-dim: #64865e;
+  --hud-faint: #223222;
+  --hud-hair: #253325;
+  --hud-panel: #1b281c;
+  --hud-tint: #151f16;
+  --hud-accent: #6fbf6a;
+  --hud-hot: #e2f2da;
+  --hud-warn: #d8c040;
+  --hud-crit: #d25040;
+  --hud-good: #6fbf6a;
+}
+
+[data-palette='mono'] {
+  --hud-bg: #0b0b0c;
+  --hud-page: #060607;
+  --hud-ink: #cfcfd4;
+  --hud-body: #949498;
+  --hud-dim: #6e6e76;
+  --hud-faint: #242428;
+  --hud-hair: #29292c;
+  --hud-panel: #1d1d20;
+  --hud-tint: #161619;
+  --hud-accent: #b4b4bc;
+  --hud-hot: #f4f4f6;
+  --hud-warn: #9c9ca4;
+  --hud-crit: #8a8a92;
+  --hud-good: #9c9ca4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--hud-page, #06050c);
+}
+
+body {
+  font-family: var(--hud-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.hud-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.hud-link {
+  color: var(--hud-ink);
+}
+
+@keyframes hud-blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.hud-blink {
+  animation: hud-blink 1.4s steps(1) infinite;
+}
+
+.katex {
+  font-size: 1.05em;
+}

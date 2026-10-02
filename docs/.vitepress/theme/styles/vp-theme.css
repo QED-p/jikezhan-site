@@ -1,0 +1,75 @@
+html.dark,
+:root {
+  --vp-c-bg: #06050c;
+  --vp-c-bg-alt: #0b0916;
+  --vp-c-bg-elv: #0b0916;
+  --vp-c-bg-soft: #100d20;
+
+  --vp-c-brand-1: #8a6fe8;
+  --vp-c-brand-2: #9b83ee;
+  --vp-c-brand-3: #6a4fd8;
+  --vp-c-brand-soft: rgba(138, 111, 232, 0.16);
+
+  --vp-c-text-1: #d6ceee;
+  --vp-c-text-2: #9993ad;
+  --vp-c-text-3: #6f6494;
+
+  --vp-c-divider: #29243c;
+  --vp-c-gutter: #100d20;
+  --vp-c-border: #29243c;
+
+  --vp-font-family-base: 'Noto Sans SC', 'Source Han Sans SC', 'Noto Sans CJK SC',
+    -apple-system, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', 'Noto Sans Mono', ui-monospace, monospace;
+}
+
+html.dark .VPNav,
+html.dark .VPSidebar {
+  border-color: var(--vp-c-divider);
+}
+
+html.dark .VPHero .name,
+html.dark .VPHero .text {
+  color: var(--hud-ink, #d6ceee);
+}
+
+html.dark .VPHero .name {
+  background: linear-gradient(120deg, #d6ceee 30%, #8a6fe8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .VPHero .tagline {
+  color: var(--vp-c-text-2);
+}
+
+html.dark .VPFeature {
+  background: #0b0916;
+  border: 1px solid var(--vp-c-divider);
+}
+
+html.dark .VPButton.brand {
+  background: #8a6fe8;
+  border-color: #8a6fe8;
+  color: #06050c;
+  font-weight: 600;
+}
+
+html.dark .VPButton.alt {
+  background: transparent;
+  border: 1px solid #6f6494;
+  color: #d6ceee;
+}
+
+html.dark .VPDoc {
+  padding-bottom: 40px;
+}
+
+html.dark .vp-doc h2 {
+  border-top-color: var(--vp-c-divider);
+}
+
+html.dark .vp-doc a {
+  text-underline-offset: 3px;
+}

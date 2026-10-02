@@ -1,0 +1,31 @@
+{
+  "name": "jikezhan-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs --port 4173 --strictPort",
+    "gen:units": "node scripts/gen-units.mjs",
+    "fix:punct": "python3 scripts/fix-punct.py",
+    "gen:corpus": "node scripts/gen-corpus.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/noto-sans-sc": "^5.3.0",
+    "katex": "^0.18.10",
+    "vue": "^3.5.43"
+  },
+  "private": true,
+  "devDependencies": {
+    "@vscode/markdown-it-katex": "^1.1.2",
+    "vitepress": "^1.6.4"
+  },
+  "type": "module",
+  "overrides": {
+    "katex": "$katex"
+  }
+}
