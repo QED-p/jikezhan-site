@@ -43,7 +43,8 @@ export default defineConfig({
       {
         text: '实验',
         items: [
-          { text: '语言模型全链路', link: '/labs/lm' }
+          { text: '语言模型全链路', link: '/labs/lm' },
+          { text: 'RV32I 五级流水线', link: '/labs/rv-pipeline' }
         ]
       }
     ],
