@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   frame: { type: Object, default: null },
@@ -7,6 +7,45 @@ const props = defineProps({
   selected: { type: String, default: null }
 })
 const emit = defineEmits(['select'])
+
+const panRef = ref(null)
+let drag = null
+let moved = false
+let captured = false
+
+function onDown(e) {
+  if (e.button !== 0) return
+  drag = { x: e.clientX, y: e.clientY, sl: panRef.value.scrollLeft, st: panRef.value.scrollTop }
+  moved = false
+  captured = false
+}
+function onMove(e) {
+  if (!drag) return
+  const dx = e.clientX - drag.x
+  const dy = e.clientY - drag.y
+  if (!moved && Math.abs(dx) + Math.abs(dy) > 6) {
+    moved = true
+    captured = true
+    panRef.value.setPointerCapture(e.pointerId)
+  }
+  if (!moved) return
+  panRef.value.scrollLeft = drag.sl - dx
+  panRef.value.scrollTop = drag.st - dy
+}
+function onUp(e) {
+  if (captured && e && e.pointerId !== undefined) {
+    try {
+      panRef.value.releasePointerCapture(e.pointerId)
+    } catch {}
+  }
+  captured = false
+  drag = null
+  setTimeout(() => (moved = false), 0)
+}
+function selectPart(k) {
+  if (moved) return
+  emit('select', k)
+}
 
 const f = computed(() => props.frame)
 const text = (pc) => {
@@ -82,6 +121,14 @@ const hazardText = computed(() => {
 
 <template>
   <div class="rvdp" data-palette="violet">
+    <div
+      class="dp-pan"
+      ref="panRef"
+      @pointerdown="onDown"
+      @pointermove="onMove"
+      @pointerup="onUp"
+      @pointerleave="onUp"
+    >
     <svg viewBox="0 0 1500 760" class="dp-svg">
       <defs>
         <linearGradient id="stageGrad" x1="0" y1="0" x2="0" y2="1">
@@ -134,13 +181,13 @@ const hazardText = computed(() => {
       </g>
 
       <!-- ============ IF ============ -->
-      <g class="clickable" data-part="pc" @click="emit('select', 'pc')">
+      <g class="clickable" data-part="pc" @click="selectPart('pc')">
         <rect x="40" y="170" width="92" height="76" rx="6" class="box" :class="{ on: stageActive('if'), sel: selected === 'pc' }" />
         <text x="86" y="194" class="bt" text-anchor="middle">PC 单元</text>
         <text x="86" y="218" class="bv" text-anchor="middle">{{ f ? hex(f.pc) : '——' }}</text>
         <text x="86" y="236" class="bs" text-anchor="middle">{{ sig.pcWrite ? '写使能' : '保持（停顿）' }}</text>
       </g>
-      <g class="clickable" data-part="ifid-next" @click="emit('select', 'ifid-next')">
+      <g class="clickable" data-part="ifid-next" @click="selectPart('ifid-next')">
         <rect x="150" y="163" width="84" height="90" rx="6" class="box" :class="{ on: stageActive('if') }" />
         <text x="192" y="184" class="bs" text-anchor="middle">下一拍 PC</text>
         <text x="192" y="204" class="bv2" text-anchor="middle">+4 → {{ f && f.if ? hex(f.if.pc + 4, 4) : '····' }}</text>
@@ -148,7 +195,7 @@ const hazardText = computed(() => {
         <text x="192" y="242" class="bs" text-anchor="middle" :class="{ crit: sig.flush }">{{ sig.flush ? '重定向' : sig.stall ? '停顿' : '顺序' }}</text>
       </g>
       <line x1="86" y1="246" x2="86" y2="330" class="wire" :class="{ on: stageActive('if') }" />
-      <g class="clickable" data-part="imem" @click="emit('select', 'imem')">
+      <g class="clickable" data-part="imem" @click="selectPart('imem')">
         <rect x="40" y="330" width="194" height="120" rx="6" class="box" :class="{ on: stageActive('if'), sel: selected === 'imem' }" />
         <text x="52" y="354" class="bt">指令内存</text>
         <template v-if="f && f.if">
@@ -161,7 +208,7 @@ const hazardText = computed(() => {
       <line x1="234" y1="390" x2="255" y2="390" class="wire" :class="{ on: stageActive('if') }" />
 
       <!-- ============ ID ============ -->
-      <g class="clickable" data-part="cu" @click="emit('select', 'cu')">
+      <g class="clickable" data-part="cu" @click="selectPart('cu')">
         <rect x="294" y="152" width="152" height="96" rx="6" class="box" :class="{ on: stageActive('id'), sel: selected === 'cu' }" />
         <text x="306" y="174" class="bt">控制单元</text>
         <text x="306" y="194" class="bs">{{ f && f.id ? f.id.name : '——' }}</text>
@@ -173,12 +220,12 @@ const hazardText = computed(() => {
           <circle
             :cx="302 + (i % 3) * 46" :cy="272 + Math.floor(i / 3) * 24" r="5"
             class="lamp" :class="{ on: lamState(L.key) }"
-            @click="emit('select', 'cu')"
+            @click="selectPart('cu')"
           />
           <text :x="312 + (i % 3) * 46" :y="276 + Math.floor(i / 3) * 24" class="lamp-label">{{ L.label }}</text>
         </g>
       </g>
-      <g class="clickable" data-part="rf" @click="emit('select', 'rf')">
+      <g class="clickable" data-part="rf" @click="selectPart('rf')">
         <rect x="294" y="318" width="236" height="130" rx="6" class="box" :class="{ on: stageActive('id'), sel: selected === 'rf' }" />
         <text x="306" y="340" class="bt">寄存器堆</text>
         <template v-if="f && f.id">
@@ -189,26 +236,26 @@ const hazardText = computed(() => {
         <text v-if="wb" x="306" y="428" class="bv2 write" :key="'w' + f.cycle">写口 x{{ wb.rd }} ← {{ dec(wb.value) }}</text>
         <text v-else x="306" y="428" class="bs">写口空闲</text>
       </g>
-      <g class="clickable" data-part="imm" @click="emit('select', 'imm')">
+      <g class="clickable" data-part="imm" @click="selectPart('imm')">
         <rect x="294" y="464" width="236" height="52" rx="6" class="box" :class="{ on: stageActive('id'), sel: selected === 'imm' }" />
         <text x="306" y="484" class="bt">立即数生成器</text>
         <text x="306" y="504" class="bv2">{{ f && f.id ? dec(f.id.imm) + '  (0x' + (f.id.imm >>> 0).toString(16) + ')' : '——' }}</text>
       </g>
 
       <!-- ============ EX ============ -->
-      <g class="clickable" data-part="muxa" @click="emit('select', 'muxa')">
+      <g class="clickable" data-part="muxa" @click="selectPart('muxa')">
         <rect x="592" y="196" width="58" height="46" rx="5" class="box mux" :class="{ on: stageActive('ex'), sel: selected === 'muxa' }" />
         <text x="621" y="214" class="bs" text-anchor="middle">MUX A</text>
         <text x="621" y="233" class="bv2" text-anchor="middle" :class="{ acc: ex && ex.fwdA > 0 }">sel={{ ex ? fwdLabel(ex.fwdA) : '00' }}</text>
       </g>
-      <g class="clickable" data-part="muxb" @click="emit('select', 'muxb')">
+      <g class="clickable" data-part="muxb" @click="selectPart('muxb')">
         <rect x="592" y="286" width="58" height="46" rx="5" class="box mux" :class="{ on: stageActive('ex'), sel: selected === 'muxb' }" />
         <text x="621" y="304" class="bs" text-anchor="middle">MUX B</text>
         <text x="621" y="323" class="bv2" text-anchor="middle" :class="{ acc: ex && ex.fwdB > 0 }">sel={{ ex ? fwdLabel(ex.fwdB) : '00' }}</text>
       </g>
       <line x1="650" y1="219" x2="700" y2="219" class="wire" :class="{ on: stageActive('ex') }" />
       <line x1="650" y1="309" x2="700" y2="309" class="wire" :class="{ on: stageActive('ex') }" />
-      <g class="clickable" data-part="alu" @click="emit('select', 'alu')">
+      <g class="clickable" data-part="alu" @click="selectPart('alu')">
         <rect x="700" y="186" width="130" height="132" rx="6" class="box" :class="{ on: stageActive('ex'), sel: selected === 'alu' }" />
         <text x="765" y="210" class="bt" text-anchor="middle">ALU</text>
         <text x="765" y="234" class="bv" text-anchor="middle">{{ ex ? ex.name : '——' }}</text>
@@ -216,14 +263,14 @@ const hazardText = computed(() => {
         <text x="712" y="278" class="bv2">B = {{ ex ? dec(ex.operB) : '·' }}</text>
         <text x="712" y="304" class="bv2 acc">→ {{ ex ? dec(ex.aluOut) : '·' }}</text>
       </g>
-      <g class="clickable" data-part="branch" @click="emit('select', 'branch')">
+      <g class="clickable" data-part="branch" @click="selectPart('branch')">
         <rect x="700" y="336" width="130" height="88" rx="6" class="box" :class="{ on: ex && ex.taken, sel: selected === 'branch' }" />
         <text x="765" y="358" class="bt" text-anchor="middle">分支 / 跳转</text>
         <text x="765" y="380" class="bv2" text-anchor="middle">{{ ex && (ex.name === 'jal' || ex.name === 'jalr' || ['beq','bne','blt','bge'].includes(ex.name)) ? (ex.taken ? '跳转成立' : '不跳转') : '空闲' }}</text>
         <text x="765" y="402" class="bv2" text-anchor="middle">目标 {{ ex && ex.taken ? hex(ex.target, 4) : '····' }}</text>
         <text x="765" y="418" class="bs" text-anchor="middle">{{ sig.flush ? '预测错误 → 冲刷 2 拍' : '' }}</text>
       </g>
-      <g class="clickable" data-part="fwd" @click="emit('select', 'fwd')">
+      <g class="clickable" data-part="fwd" @click="selectPart('fwd')">
         <rect x="592" y="446" width="252" height="96" rx="6" class="box" :class="{ on: ex && (ex.fwdA > 0 || ex.fwdB > 0), sel: selected === 'fwd' }" />
         <text x="604" y="468" class="bt">转发单元</text>
         <text x="604" y="490" class="bv2" :class="{ acc: ex && ex.fwdA === 2 }">EX/MEM → A {{ ex && ex.fwdA === 2 ? '●' : '○' }}</text>
@@ -243,7 +290,7 @@ const hazardText = computed(() => {
 
       <!-- ============ MEM ============ -->
       <line x1="850" y1="255" x2="898" y2="255" class="wire" :class="{ on: stageActive('mem') }" />
-      <g class="clickable" data-part="dmem" @click="emit('select', 'dmem')">
+      <g class="clickable" data-part="dmem" @click="selectPart('dmem')">
         <rect x="898" y="196" width="212" height="180" rx="6" class="box" :class="{ on: stageActive('mem'), sel: selected === 'dmem' }" />
         <text x="910" y="220" class="bt">数据内存</text>
         <template v-if="mem">
@@ -260,14 +307,14 @@ const hazardText = computed(() => {
       <line x1="1110" y1="290" x2="1132" y2="290" class="wire" :class="{ on: stageActive('mem') }" />
 
       <!-- ============ WB ============ -->
-      <g class="clickable" data-part="wbmux" @click="emit('select', 'wbmux')">
+      <g class="clickable" data-part="wbmux" @click="selectPart('wbmux')">
         <rect x="1170" y="256" width="66" height="76" rx="6" class="box mux" :class="{ on: stageActive('wb'), sel: selected === 'wbmux' }" />
         <text x="1203" y="278" class="bs" text-anchor="middle">写回</text>
         <text x="1203" y="298" class="bv2" text-anchor="middle">MUX</text>
         <text x="1203" y="318" class="bv2" text-anchor="middle" :class="{ acc: !!wb }">{{ wbSel }}</text>
       </g>
       <line x1="1236" y1="294" x2="1266" y2="294" class="wire" :class="{ on: !!wb }" />
-      <g class="clickable" data-part="wbval" @click="emit('select', 'wbval')">
+      <g class="clickable" data-part="wbval" @click="selectPart('wbval')">
         <rect x="1266" y="252" width="184" height="84" rx="6" class="box" :class="{ on: !!wb, sel: selected === 'wbval' }" />
         <text x="1278" y="276" class="bt">写回值</text>
         <template v-if="wb">
@@ -280,7 +327,7 @@ const hazardText = computed(() => {
       <path d="M 1358 336 L 1358 640 L 415 640 L 415 452" class="wbpath" :class="{ on: !!wb }" />
 
       <!-- ============ 冒险单元 ============ -->
-      <g class="clickable" data-part="hazard" @click="emit('select', 'hazard')">
+      <g class="clickable" data-part="hazard" @click="selectPart('hazard')">
         <rect x="560" y="606" width="320" height="104" rx="8" class="box hazard" :class="{ on: sig.stall || sig.flush, sel: selected === 'hazard' }" />
         <text x="574" y="630" class="bt">冒险检测单元</text>
         <text x="574" y="654" class="bv2" :class="{ crit: hazardText && hazardText.loadUse }">
@@ -305,6 +352,8 @@ const hazardText = computed(() => {
         <text x="1008" y="710">冲刷</text>
       </g>
     </svg>
+    </div>
+    <p class="dp-tip">按住空白处拖动可平移（也可滚轮/滚动条）· 点击部件看内部实现</p>
   </div>
 </template>
 
@@ -312,15 +361,45 @@ const hazardText = computed(() => {
 .rvdp {
   background: var(--hud-bg);
   border: 1px solid var(--hud-faint);
-  overflow: hidden;
+}
+.dp-pan {
+  overflow: auto;
+  cursor: grab;
+  max-height: 780px;
+}
+.dp-pan:active {
+  cursor: grabbing;
+}
+.dp-pan::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.dp-pan::-webkit-scrollbar-track {
+  background: var(--hud-bg);
+}
+.dp-pan::-webkit-scrollbar-thumb {
+  background: var(--hud-faint);
+  border-radius: 5px;
+}
+.dp-pan::-webkit-scrollbar-thumb:hover {
+  background: var(--hud-dim);
 }
 .dp-svg {
   display: block;
   width: 100%;
+  min-width: 1900px;
   height: auto;
+  user-select: none;
+}
+.dp-tip {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  color: var(--hud-dim);
+  border-top: 1px solid var(--hud-faint);
 }
 .stage-name {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   fill: var(--hud-dim);
   letter-spacing: 0.08em;
@@ -356,24 +435,24 @@ const hazardText = computed(() => {
   stroke-width: 1.6;
 }
 .bt {
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   fill: var(--hud-ink);
 }
 .bv {
-  font-size: 12.5px;
+  font-size: 14px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-hot);
   font-variant-numeric: tabular-nums;
 }
 .bv2 {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-body);
   font-variant-numeric: tabular-nums;
 }
 .bs {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-dim);
 }
@@ -459,7 +538,7 @@ const hazardText = computed(() => {
   filter: url(#glow);
 }
 .lamp-label {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-dim);
 }
@@ -480,18 +559,18 @@ const hazardText = computed(() => {
   stroke: var(--hud-crit);
 }
 .bar-label {
-  font-size: 10px;
+  font-size: 11px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-dim);
   letter-spacing: 0.06em;
 }
 .bar-sub {
-  font-size: 10px;
+  font-size: 11px;
   font-family: ui-monospace, monospace;
   fill: var(--hud-body);
 }
 .legend text {
-  font-size: 11px;
+  font-size: 12px;
   fill: var(--hud-dim);
 }
 .mem-cell {

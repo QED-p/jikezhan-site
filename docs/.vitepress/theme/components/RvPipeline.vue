@@ -548,20 +548,19 @@ const TABS = [
   margin-top: 8px;
 }
 .rp-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 16px;
-  align-items: start;
+  display: block;
 }
 .rp-main {
   min-width: 0;
 }
 .rp-inspect {
+  margin-top: 16px;
   border: 1px solid var(--hud-faint);
   background: var(--hud-panel);
-  padding: 12px 14px;
-  max-height: 720px;
+  padding: 12px 16px;
+  max-height: 420px;
   overflow: auto;
+  max-width: 1400px;
 }
 .rp-inspect-head {
   display: flex;
@@ -652,9 +651,5 @@ const TABS = [
 .cond p.hl.crit {
   color: var(--hud-crit);
 }
-@media (max-width: 1100px) {
-  .rp-body {
-    grid-template-columns: 1fr;
-  }
-}
+
 </style>
