@@ -6,5 +6,9 @@ import '@fontsource/noto-sans-sc/700.css'
 import 'katex/dist/katex.min.css'
 import './styles/tokens.css'
 import './styles/vp-theme.css'
+import Layout from './Layout.vue'
 
-export default DefaultTheme
+export default {
+  extends: DefaultTheme,
+  Layout
+}

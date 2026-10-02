@@ -73,3 +73,39 @@ html.dark .vp-doc h2 {
 html.dark .vp-doc a {
   text-underline-offset: 3px;
 }
+
+html.dark .VPHero {
+  position: relative;
+  overflow: hidden;
+}
+
+html.dark .VPHero::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10%;
+  background:
+    radial-gradient(620px 300px at 22% 30%, rgba(138, 111, 232, 0.1), transparent 62%),
+    radial-gradient(520px 260px at 80% 18%, rgba(95, 211, 216, 0.05), transparent 60%);
+  animation: hero-drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+html.dark .VPHero .container {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes hero-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark .VPHero::before {
+    animation: none;
+  }
+}
