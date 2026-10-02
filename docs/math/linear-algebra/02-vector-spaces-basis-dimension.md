@@ -22,11 +22,29 @@ import HighDim from '../../.vitepress/theme/components/HighDim.vue'
 
 ## 高中那点工具，够用到哪里
 
-高中写向量就是有序数组 $(x, y)$，坐标运算逐个分量进行.但几乎没人问过：这两个数从哪来？
+这一章的核心对象，教材已经给过你了——而且比你想的更近：
 
-答案藏在默认里.教材的坐标是相对 $\mathbf{e}_1 = (1, 0)$ 和 $\mathbf{e}_2 = (0, 1)$ 这两个向量算出来的，只是默认到不需要写出来.平面上所有向量都能写成 $a\mathbf{e}_1 + b\mathbf{e}_2$，$(a, b)$ 就是这句话的缩写.
+- **必修二 6.3.1 平面向量基本定理**：平面上两个不共线的向量 $\mathbf{e}_1$、$\mathbf{e}_2$ 叫一组"基底"，平面内任一向量 $\mathbf{a}$ 都能写成 $\mathbf{a} = \lambda_1\mathbf{e}_1 + \lambda_2\mathbf{e}_2$，而且这对实数唯一. 把"基底"换成"基"、"系数"换成"坐标"，就是这个定理的逐字翻译.
+- **必修二 6.3.2 正交分解及坐标表示**：基底取成互相垂直的 $\mathbf{e}_1 = (1,0)$、$\mathbf{e}_2 = (0,1)$，分解式就变成你天天写的 $(x, y)$——教材里的坐标，是"标准基下的坐标"，只是默认到不写基底.
+- **选必一 1.2 空间向量基本定理**：同一件事在空间里——三个不共面的向量当基底，任意空间向量有唯一分解. 二维、三维的"基本定理"，到 $n$ 维就是这一章的"基与坐标".
 
-把两个"模具"换成别的向量，缩写规则就变了，向量本身没动.这一章就是把这件事说清楚.
+**一个教材场景，两种读法.** 平行四边形 $ABCD$，高中常用"以 $\{\overrightarrow{AB}, \overrightarrow{AD}\}$ 为基底"表示其它向量：对角线
+
+$$
+\overrightarrow{AC} = \overrightarrow{AB} + \overrightarrow{AD},
+\qquad
+\overrightarrow{BD} = \overrightarrow{AD} - \overrightarrow{AB}.
+$$
+
+换成线代语言：$\overrightarrow{AC}$ 在这组基下的坐标是 $(1,1)$，$\overrightarrow{BD}$ 是 $(-1,1)$. 现在反过来，用 $\{\overrightarrow{AC}, \overrightarrow{BD}\}$ 当基表示 $\overrightarrow{AB}$、$\overrightarrow{AD}$：
+
+$$
+\overrightarrow{AB} = \tfrac12\overrightarrow{AC} - \tfrac12\overrightarrow{BD},
+\qquad
+\overrightarrow{AD} = \tfrac12\overrightarrow{AC} + \tfrac12\overrightarrow{BD}.
+$$
+
+同一个 $\overrightarrow{AB}$，前一组基下坐标是 $(1,0)$，后一组基下坐标是 $(\tfrac12, -\tfrac12)$——**向量没动，坐标全变了**. 这就是开头那句"坐标不是向量的属性"的高中版本；这一章把它说清楚.
 
 ## 本章的舞台
 
