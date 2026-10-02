@@ -150,7 +150,8 @@ export function step(cpu) {
         target = st.name === 'jalr' ? (aVal + st.imm) & ~1 : (st.pc + st.imm) | 0
       }
       const predicted = cpu.predict === 'taken' && !!st.predicted
-      if (taken) cpu.btb.set(st.pc, target)
+      const isJalr = st.name === 'jalr'
+      if (taken && !isJalr) cpu.btb.set(st.pc, target)
       if (taken && !predicted) {
         flush = true
         cpu.mispredicts++

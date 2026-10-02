@@ -100,6 +100,92 @@ ecall`,
     }
   },
   {
+    id: 'qsort',
+    name: '随机数 + 快排',
+    note: '递归快排（Lomuto 分区）· 栈、jal/jalr 与访存全家桶',
+    asm: `# 1) 生成 8 个伪随机数：seed = (seed*5 + 1) mod 256
+li x10, 256
+li x2, 512
+li x5, 1
+li x6, 0
+li x12, 8
+gen:
+slli x7, x5, 2
+add x7, x7, x5
+addi x7, x7, 1
+andi x5, x7, 255
+slli x7, x6, 2
+add x7, x7, x10
+sw x5, 0(x7)
+addi x6, x6, 1
+blt x6, x12, gen
+
+# 2) 快排(a, 0, n-1)
+li x11, 0
+addi x12, x12, -1
+jal x1, qsort
+ecall
+
+# ---- qsort(a0=base, a1=lo, a2=hi) ----
+qsort:
+bge x11, x12, qret
+addi x2, x2, -16
+sw x1, 0(x2)
+sw x11, 4(x2)
+sw x12, 8(x2)
+jal x1, partition
+sw x18, 12(x2)
+addi x12, x18, -1
+jal x1, qsort
+lw x11, 4(x2)
+lw x12, 8(x2)
+lw x18, 12(x2)
+addi x11, x18, 1
+jal x1, qsort
+lw x1, 0(x2)
+addi x2, x2, 16
+qret:
+jalr x0, x1, 0
+
+# ---- partition(a0=base, a1=lo, a2=hi) -> p in x18 ----
+partition:
+slli x16, x12, 2
+add x16, x16, x10
+lw x15, 0(x16)
+addi x13, x11, -1
+mv x14, x11
+ploop:
+bge x14, x12, pdone
+slli x16, x14, 2
+add x16, x16, x10
+lw x17, 0(x16)
+bge x17, x15, pnext
+addi x13, x13, 1
+slli x6, x13, 2
+add x6, x6, x10
+lw x7, 0(x6)
+sw x17, 0(x6)
+sw x7, 0(x16)
+pnext:
+addi x14, x14, 1
+j ploop
+pdone:
+addi x18, x13, 1
+slli x6, x18, 2
+add x6, x6, x10
+slli x7, x12, 2
+add x7, x7, x10
+lw x16, 0(x6)
+lw x17, 0(x7)
+sw x17, 0(x6)
+sw x16, 0(x7)
+jalr x0, x1, 0`,
+    expect: {
+      regs: { 12: 7 },
+      data: { 256: 6, 260: 13, 264: 31, 268: 66, 272: 75, 276: 89, 280: 120, 284: 156 }
+    }
+  },
+  {
     id: 'mem',
     name: '访存',
     note: 'sw/lw 往返数据内存',

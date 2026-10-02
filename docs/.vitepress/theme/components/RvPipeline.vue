@@ -239,7 +239,7 @@ const generic = computed(() => {
     },
     branch: {
       title: '分支 / 跳转单元',
-      text: '在 EX 段比较（转发后的）操作数：成立则重定向 PC；未预测到时冲刷两拍。',
+      text: '在 EX 段比较（转发后的）操作数：成立则重定向 PC；未预测到时冲刷两拍。静态预测用 BTB 缓存固定目标（分支与 jal）；jalr 的返回地址随调用点变化，不参与预测。',
       vals: [
         ['结果', fr && fr.ex && fr.ex.taken ? '成立' : '不成立'],
         ['目标', fr && fr.ex && fr.ex.taken ? hex(fr.ex.target) : '—'],
