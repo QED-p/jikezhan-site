@@ -7,9 +7,6 @@ hero:
   tagline: 可交互的硬核教程：每个概念都配一个能动手的实验
   actions:
     - theme: brand
-      text: 进入注意力实验
-      link: /labs/attention
-    - theme: alt
       text: 从线性代数开始
       link: /math/linear-algebra/
     - theme: alt

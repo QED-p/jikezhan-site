@@ -41,7 +41,6 @@ export default defineConfig({
       {
         text: '实验',
         items: [
-          { text: '注意力权重矩阵', link: '/labs/attention' },
           { text: '语言模型全链路', link: '/labs/lm' }
         ]
       }
