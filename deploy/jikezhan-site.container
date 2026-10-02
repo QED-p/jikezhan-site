@@ -1,0 +1,19 @@
+[Unit]
+Description=Jikezhan site (nginx, atomic releases)
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=jikezhan-site
+PublishPort=80:80
+PublishPort=443:443
+Volume=/srv/jikezhan/current:/usr/share/nginx/html:ro
+Volume=/srv/jikezhan/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+Volume=/srv/jikezhan/certbot:/usr/share/nginx/certbot:ro
+Volume=/etc/letsencrypt:/etc/nginx/certs:ro
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -61,7 +61,7 @@ $n$ 维同理：
 > **定义（公理版行列式）** 满足以下三条的函数 $D$ 叫行列式：
 > (i) **多重线性**：对每一列都线性，例如
 > $$
-> D(\dots, a\mathbf{v} + b\mathbf{w}, \dots) = a\,D(\dots, \mathbf{v}, \dots) + b\,D(\dots, \mathbf{w}, \dots)；
+> D(\dots, a\mathbf{v} + b\mathbf{w}, \dots) = a\,D(\dots, \mathbf{v}, \dots) + b\,D(\dots, \mathbf{w}, \dots)
 > $$
 > (ii) **交错性**：交换任意两列，$D$ 变号；
 > (iii) **归一化**：$D(\mathbf{e}_1, \dots, \mathbf{e}_n) = 1$.

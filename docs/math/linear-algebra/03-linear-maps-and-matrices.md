@@ -123,9 +123,9 @@ $$
 两个 $2 \times 2$ 的例子，手算一遍.取
 
 $$
-A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \text{（剪切）},
+A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad (\text{剪切}),
 \qquad
-B = \begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix} \text{（旋转 90°）}.
+B = \begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix} \quad (\text{旋转 } 90°).
 $$
 
 先算 $AB$，即先旋转、再剪切.每个元素是"$A$ 的一行点乘 $B$ 的一列"：
