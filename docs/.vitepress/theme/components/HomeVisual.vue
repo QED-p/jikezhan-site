@@ -9,10 +9,10 @@ const SCENES = [
   { key: 'la', label: '线性代数 · 特征方向（三维）' },
   { key: 'gs', label: '矩阵分析 · 正交化' },
   { key: 'va', label: '矢量分析 · 梯度、散度与旋度' },
-  { key: 'gd', label: '梯度下降 · 损失曲线' },
+  { key: 'gd', label: '梯度下降 · 三维损失曲面' },
   { key: 'cnn', label: 'CNN · 卷积核' },
-  { key: 'tf', label: 'Transformer · 注意力' },
-  { key: 'arch', label: '体系结构 · 哈佛架构' },
+  { key: 'tf', label: 'Transformer · 全链路' },
+  { key: 'arch', label: '体系结构 · 哈佛架构与存储层次' },
   { key: 'mix', label: '概率 · 信息 · 离散' }
 ]
 const DUR = [4.6, 4.2, 4.6, 4.2, 4.4, 4.2, 5.2, 4.2]
@@ -485,70 +485,116 @@ function drawVA(t, P) {
   ctx.fillText(`div F = 0.60   curl F = ${curl.toFixed(2)}`, W - 250, 22)
 }
 
-/* ---------- 幕 4：梯度下降（扁平 HUD） ---------- */
+/* ---------- 幕 4：梯度下降（三维损失曲面） ---------- */
+function buildManifold() {
+  const f = (x, y) => 0.35 * (x * x + y * y) + 0.55 * Math.sin(1.8 * x + 0.4) * Math.cos(1.6 * y - 0.3)
+  const grad = (x, y) => [
+    0.7 * x + 0.99 * Math.cos(1.8 * x + 0.4) * Math.cos(1.6 * y - 0.3),
+    0.7 * y - 0.88 * Math.sin(1.8 * x + 0.4) * Math.sin(1.6 * y - 0.3)
+  ]
+  const path = [[1.75, 1.55]]
+  let px = 1.75
+  let py = 1.55
+  for (let k = 0; k < 46; k++) {
+    const [gx, gy] = grad(px, py)
+    px = clamp(px - 0.1 * gx, -2.15, 2.15)
+    py = clamp(py - 0.1 * gy, -1.5, 1.5)
+    path.push([px, py])
+  }
+  return { f, grad, path }
+}
 function drawGD(t, P) {
-  const x0 = 96
-  const x1 = W - 96
-  const yb = H - 64
-  const yt = 46
-  const wmin = -1.6
-  const wspan = 4.0
-  const f = (w) => 0.15 + 0.8 * (w - 0.4) * (w - 0.4)
-  const Xw = (w) => x0 + ((w - wmin) / wspan) * (x1 - x0)
-  const Yf = (fv) => yb - (fv / 3.4) * (yb - yt)
-  ctx.strokeStyle = rgba(P.faint, 0.7)
-  ctx.lineWidth = 1
-  for (let k = -1; k <= 2; k++) {
-    line(Xw(k), yt, Xw(k), yb, rgba(P.faint, 0.7), 1)
-  }
-  for (let fv = 0.5; fv <= 3; fv += 0.5) {
-    line(x0, Yf(fv), x1, Yf(fv), rgba(P.faint, 0.5), 1)
-  }
-  line(x0, yb, x1, yb, rgba(P.dim, 0.8), 1.2)
-  ctx.beginPath()
-  for (let w = wmin; w <= wmin + wspan; w += 0.04) {
-    const px = Xw(w)
-    const py = Yf(f(w))
-    w === wmin ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
-  }
-  ctx.strokeStyle = rgba(P.accent, 0.95)
-  ctx.lineWidth = 1.8
-  ctx.stroke()
-  const lr = 0.35
-  let w = 2.3
-  const pts = [[w, f(w)]]
-  const stepT = 0.4
-  const maxSteps = 9
-  const steps = Math.min(maxSteps, Math.floor(t / stepT))
-  for (let k = 0; k < steps; k++) {
-    w = w - lr * 1.6 * (w - 0.4)
-    pts.push([w, f(w)])
-  }
-  for (let k = 0; k < pts.length; k++) {
-    const px = Xw(pts[k][0])
-    const py = Yf(pts[k][1])
-    ctx.beginPath()
-    ctx.arc(px, py, k === pts.length - 1 ? 5 : 3, 0, Math.PI * 2)
-    ctx.fillStyle = rgba(k === pts.length - 1 ? P.hot : P.dim, k === pts.length - 1 ? 1 : 0.7)
-    ctx.fill()
-    if (k > 0) {
-      const qx = Xw(pts[k - 1][0])
-      const qy = Yf(pts[k - 1][1])
-      line(qx, qy, px, py, rgba(P.warn, 0.55), 1.2, [3, 3])
+  if (!state.gd) state.gd = buildManifold()
+  const mf = state.gd
+  const c = camera3(-0.6 + 0.35 * Math.sin(t * 0.5), 0.66 + 0.06 * Math.sin(t * 0.4))
+  const R = 2.2
+  const N = 24
+  let zmax = 0.1
+  for (let i = 0; i <= N; i++) {
+    for (let j = 0; j <= N; j++) {
+      const z = mf.f(-R + (i / N) * 2 * R, -R + (j / N) * 2 * R)
+      if (z > zmax) zmax = z
     }
   }
-  const cur = pts[pts.length - 1]
-  const slope = 1.6 * (cur[0] - 0.4)
-  const px = Xw(cur[0])
-  const py = Yf(cur[1])
-  arrow(px, py, px - slope * 14, py + slope * slope * 6 + 12, rgba(P.hot, 0.85), 1.4, 5)
-  glowDot(px, py, 3.4, P.hot)
+  const zs = 1.9 / zmax
+  const zAt = (x, y) => mf.f(x, y) * zs
+  const proj = (x, y, z) => project3({ x, y, z }, c)
+  const quads = []
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const xa = -R + (i / N) * 2 * R
+      const xb = -R + ((i + 1) / N) * 2 * R
+      const ya = -R + (j / N) * 2 * R
+      const yb = -R + ((j + 1) / N) * 2 * R
+      const p1 = proj(xa, ya, zAt(xa, ya))
+      const p2 = proj(xb, ya, zAt(xb, ya))
+      const p3 = proj(xb, yb, zAt(xb, yb))
+      const p4 = proj(xa, yb, zAt(xa, yb))
+      if (!p1 || !p2 || !p3 || !p4) continue
+      const zm = zAt((xa + xb) / 2, (ya + yb) / 2)
+      quads.push({ pts: [p1, p2, p3, p4], depth: (p1.z + p2.z + p3.z + p4.z) / 4, zm })
+    }
+  }
+  quads.sort((a, b) => b.depth - a.depth)
+  for (const q of quads) {
+    const ht = clamp(q.zm / 1.9, 0, 1)
+    ctx.beginPath()
+    ctx.moveTo(q.pts[0].x, q.pts[0].y)
+    for (let k = 1; k < 4; k++) ctx.lineTo(q.pts[k].x, q.pts[k].y)
+    ctx.closePath()
+    ctx.fillStyle = rgba(mix(P.accent, P.warn, ht), 0.1 + ht * 0.3)
+    ctx.fill()
+    ctx.strokeStyle = rgba(P.bg, 0.5)
+    ctx.lineWidth = 0.7
+    ctx.stroke()
+  }
+  const stepT = 0.09
+  const shown = Math.min(mf.path.length - 1, Math.floor(t / stepT))
+  const frac = clamp(t / stepT - shown, 0, 1)
+  const upto = mf.path.slice(0, shown + 1)
+  ctx.beginPath()
+  upto.forEach(([x, y], i) => {
+    const p = proj(x, y, zAt(x, y) + 0.03)
+    if (!p) return
+    i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)
+  })
+  ctx.strokeStyle = rgba(P.hot, 0.95)
+  ctx.lineWidth = 1.8
+  ctx.stroke()
+  for (const [x, y] of upto) {
+    const p = proj(x, y, zAt(x, y) + 0.03)
+    if (!p) continue
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
+    ctx.fillStyle = rgba(P.hot, 0.55)
+    ctx.fill()
+  }
+  const cur =
+    shown < mf.path.length - 1
+      ? [lerp(mf.path[shown][0], mf.path[shown + 1][0], frac), lerp(mf.path[shown][1], mf.path[shown + 1][1], frac)]
+      : mf.path[mf.path.length - 1]
+  const [gx, gy] = mf.grad(cur[0], cur[1])
+  const gn = Math.hypot(gx, gy) || 1
+  const k = 0.6
+  const dx = -((gx / gn) * k)
+  const dy = -((gy / gn) * k)
+  const pC = proj(cur[0], cur[1], zAt(cur[0], cur[1]) + 0.04)
+  const pD = proj(cur[0] + dx, cur[1] + dy, zAt(cur[0] + dx, cur[1] + dy) + 0.04)
+  if (pC && pD) {
+    arrow(pC.x, pC.y, pD.x, pD.y, rgba(P.good, 0.95), 1.7, 6)
+    ctx.fillStyle = rgba(P.good, 0.95)
+    ctx.font = font(10)
+    ctx.fillText('−∇f', pD.x + 6, pD.y - 6)
+  }
+  if (pC) glowDot(pC.x, pC.y, 3.6, P.hot)
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(`lr = ${lr}   w = ${cur[0].toFixed(2)}   loss = ${cur[1].toFixed(2)}   step ${steps}`, W - 380, 22)
-  ctx.fillText('−∇f 方向', px + 10, py + 34)
+  ctx.fillText(
+    `lr 0.10   step ${shown}/46   f = ${mf.f(cur[0], cur[1]).toFixed(2)}   |∇f| = ${gn.toFixed(2)}`,
+    W - 430,
+    22
+  )
 }
-
 /* ---------- 幕 5：CNN（扁平 HUD） ---------- */
 function drawCNN(t, P) {
   const n = 7
@@ -621,76 +667,152 @@ function drawCNN(t, P) {
   ctx.fillText('conv 3×3 · stride 1 · ReLU', W - 250, 22)
 }
 
-/* ---------- 幕 6：Transformer（扁平 HUD） ---------- */
-const TOKENS = ['极', '客', '栈', '是', '社', '团']
+/* ---------- 幕 6：Transformer（全链路 + 参数方框，扁平 HUD） ---------- */
 function drawTF(t, P) {
-  const n = 6
-  const cell = Math.min(30, H / 13)
-  const gw = cell * n
-  const gx = (W - (gw + 34 + cell * 2.8)) / 2
-  const gy = H * 0.44
-  const qi = Math.floor(t / 1.05) % n
-  const w = []
-  for (let i = 0; i < n; i++) {
-    w.push([])
-    let sum = 0
-    for (let j = 0; j < n; j++) {
-      const sc = 1.3 * Math.sin(1.1 * i + 0.9 * j + 0.9 * t) + (i === j ? 0.9 : 0)
-      w[i].push(Math.exp(sc))
-      sum += w[i][j]
-    }
-    for (let j = 0; j < n; j++) w[i][j] /= sum
+  const stageNames = ['Token', 'Embedding', 'Q / K / V', 'Attention', 'FFN', 'Output']
+  const nStage = stageNames.length
+  const bw = Math.min(168, (W - 80) / nStage - 18)
+  const gap = (W - 80 - nStage * bw) / (nStage - 1)
+  const x0 = 40
+  const midY = H * 0.47
+  const bh = 132
+  const cycle = t / 0.62
+  const stageW = Math.floor(cycle) % nStage
+  const inStage = cycle - Math.floor(cycle)
+  ctx.font = font(10)
+  const hash2 = (i, j) => {
+    const h = Math.sin(i * 127.1 + j * 311.7 + Math.floor(t * 3) * 74.7) * 43758.5453
+    return h - Math.floor(h)
   }
-  const ty = gy - cell * 2.2
-  for (let j = 0; j < n; j++) {
-    const x = gx + j * cell
-    ctx.fillStyle = rgba(P.bg, 1)
-    ctx.fillRect(x, ty, cell * 0.86, cell * 0.86)
-    ctx.strokeStyle = rgba(j === qi ? P.accent : P.faint, 1.2)
-    ctx.lineWidth = j === qi ? 1.6 : 1
-    ctx.strokeRect(x, ty, cell * 0.86, cell * 0.86)
-    ctx.fillStyle = rgba(j === qi ? P.accent : P.ink, 1)
-    ctx.font = font(12)
-    ctx.fillText(TOKENS[j], x + cell * 0.28, ty + cell * 0.62)
-  }
-  const qx = gx + qi * cell + cell * 0.43
-  for (let j = 0; j < n; j++) {
-    const tx = gx + j * cell + cell * 0.43
-    const lw = 0.6 + w[qi][j] * 5.5
-    ctx.strokeStyle = rgba(P.hot, 0.14 + w[qi][j] * 0.72)
-    ctx.lineWidth = lw
-    ctx.beginPath()
-    ctx.moveTo(qx, ty)
-    ctx.quadraticCurveTo((qx + tx) / 2, ty - cell * 1.7, tx, ty)
-    ctx.stroke()
-  }
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const x = gx + j * cell
-      const y = gy + i * cell
-      ctx.fillStyle = rgba(P.accent, 0.06 + Math.pow(w[i][j], 1.3) * 0.85)
-      ctx.fillRect(x, y, cell * 0.86, cell * 0.86)
-      ctx.strokeStyle = rgba(i === qi ? P.accent : P.faint, i === qi ? 0.9 : 0.6)
-      ctx.lineWidth = 1
-      ctx.strokeRect(x, y, cell * 0.86, cell * 0.86)
+  const paramGrid = (x, y, cols, rows, cw) => {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        ctx.fillStyle = rgba(P.accent, 0.18 + hash2(i + x, j + y) * 0.55)
+        ctx.fillRect(x + j * (cw + 1), y + i * (cw + 1), cw, cw)
+        ctx.strokeStyle = rgba(P.faint, 0.9)
+        ctx.lineWidth = 1
+        ctx.strokeRect(x + j * (cw + 1), y + i * (cw + 1), cw, cw)
+      }
     }
   }
-  const barX = gx + gw + 34
-  for (let j = 0; j < n; j++) {
-    const y = gy + j * cell
-    const bw2 = w[qi][j] * cell * 2.8
-    ctx.fillStyle = rgba(P.accent, 0.7)
-    ctx.fillRect(barX, y + cell * 0.18, bw2, cell * 0.55)
-    ctx.strokeStyle = rgba(P.faint, 1)
-    ctx.lineWidth = 1
-    ctx.strokeRect(barX, y + cell * 0.18, cell * 2.8, cell * 0.55)
+  const bars = [0.55, 0.24, 0.13, 0.08]
+  const outNames = ['客', '栈', '是', '的']
+  for (let sIdx = 0; sIdx < nStage; sIdx++) {
+    const x = x0 + sIdx * (bw + gap)
+    const active = sIdx === stageW
+    ctx.strokeStyle = rgba(active ? P.accent : P.faint, active ? 1 : 0.9)
+    ctx.lineWidth = active ? 1.6 : 1
+    ctx.strokeRect(x, midY - bh / 2, bw, bh)
+    ctx.fillStyle = rgba(active ? P.accent : P.dim, 0.95)
+    ctx.fillText(stageNames[sIdx], x + 8, midY - bh / 2 - 8)
+    if (sIdx === 0) {
+      const toks = ['极', '客', '栈', '是']
+      toks.forEach((tk, i) => {
+        const cx = x + 18 + (i % 2) * 64
+        const cy = midY - 52 + Math.floor(i / 2) * 44
+        ctx.strokeStyle = rgba(P.ink, 0.8)
+        ctx.strokeRect(cx, cy, 50, 30)
+        ctx.fillStyle = rgba(P.ink, 0.95)
+        ctx.font = font(13)
+        ctx.fillText(tk, cx + 18, cy + 20)
+        ctx.font = font(10)
+      })
+    } else if (sIdx === 1) {
+      paramGrid(x + 18, midY - 40, 8, 6, 7)
+      const row = stageW === sIdx ? Math.floor(inStage * 6) % 6 : 0
+      ctx.fillStyle = rgba(P.hot, 0.95)
+      ctx.fillRect(x + 18 + row * 8, midY - 40 + row * 8, 7, 7)
+    } else if (sIdx === 2) {
+      ;[['Wq', 0], ['Wk', 1], ['Wv', 2]].forEach((pair) => {
+        const lb = pair[0]
+        const i = pair[1]
+        paramGrid(x + 14 + i * 52, midY - 32, 5, 5, 6)
+        ctx.fillStyle = rgba(P.ink, 0.9)
+        ctx.fillText(lb, x + 14 + i * 52, midY + 18)
+      })
+    } else if (sIdx === 3) {
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          const a = 0.08 + Math.max(0, Math.sin(i * 1.2 + j * 0.9 + t * 2)) * 0.5
+          ctx.fillStyle = rgba(P.accent, a)
+          ctx.fillRect(x + 18 + j * 13, midY - 40 + i * 13, 12, 12)
+        }
+      }
+      ctx.fillStyle = rgba(P.dim, 0.95)
+      ctx.fillText('softmax(QKᵀ/√d)', x + 18, midY + 46)
+    } else if (sIdx === 4) {
+      paramGrid(x + 16, midY - 42, 5, 4, 7)
+      paramGrid(x + 82, midY - 42, 4, 5, 7)
+      ctx.fillStyle = rgba(P.ink, 0.9)
+      ctx.fillText('W₁', x + 16, midY + 34)
+      ctx.fillText('W₂', x + 82, midY + 34)
+      ctx.fillStyle = rgba(P.dim, 0.95)
+      ctx.fillText('ReLU', x + 52, midY - 50)
+    } else {
+      outNames.forEach((nm, i) => {
+        const bwid = bars[i] * (bw - 64)
+        ctx.fillStyle = rgba(i === 0 ? P.accent : P.dim, i === 0 ? 0.85 : 0.5)
+        ctx.fillRect(x + 16, midY - 44 + i * 24, bwid, 16)
+        ctx.fillStyle = rgba(P.ink, 0.9)
+        ctx.fillText(nm, x + 16 + bwid + 6, midY - 32 + i * 24)
+      })
+    }
+  }
+  for (let sIdx = 0; sIdx < nStage - 1; sIdx++) {
+    const xa = x0 + sIdx * (bw + gap) + bw
+    const xb = x0 + (sIdx + 1) * (bw + gap)
+    const active = sIdx === stageW
+    arrow(xa, midY, xb - 2, midY, rgba(active ? P.accent : P.faint, active ? 0.95 : 0.75), active ? 1.6 : 1, 6)
+  }
+  if (stageW < nStage - 1) {
+    const chipA = x0 + stageW * (bw + gap) + bw
+    const chipB = chipA + gap
+    glowDot(lerp(chipA, chipB, smooth(clamp(inStage / 0.7, 0, 1))), midY, 4, P.hot)
+  } else {
+    glowDot(x0 + (nStage - 1) * (bw + gap) + bw * 0.5, midY - bh / 2 - 30, 4, P.hot)
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(`query = ${TOKENS[qi]}   softmax(QKᵀ/√d)`, W - 280, 22)
+  ctx.fillText('前向：token → xW + b → softmax → 下一个 token', W - 430, 22)
+}
+/* ---------- 幕 7：体系结构（哈佛架构图 + 存储层次，扁平 HUD） ---------- */
+function buildCacheSim() {
+  const seq = [3, 7, 3, 12, 7, 20, 3, 12, 7, 5, 20, 3, 9, 7, 12, 3, 28, 5, 9, 20, 44, 7, 28, 9, 52, 3, 7, 44]
+  const L1 = new Array(8).fill(-1)
+  const L2 = new Array(16).fill(-1)
+  let p1 = 0
+  let p2 = 0
+  let hits = 0
+  let misses = 0
+  const steps = []
+  for (const blk of seq) {
+    const hit1 = L1.indexOf(blk) >= 0
+    let hit2 = false
+    if (hit1) {
+      hits++
+    } else {
+      misses++
+      hit2 = L2.indexOf(blk) >= 0
+      let slot = L1.indexOf(-1)
+      if (slot < 0) {
+        slot = p1
+        p1 = (p1 + 1) % L1.length
+      }
+      L1[slot] = blk
+      if (!hit2) {
+        let s2 = L2.indexOf(-1)
+        if (s2 < 0) {
+          s2 = p2
+          p2 = (p2 + 1) % L2.length
+        }
+        L2[s2] = blk
+      }
+    }
+    steps.push({ blk, hit1, hit2, l1: [...L1], l2: [...L2], hits, misses })
+  }
+  return { steps }
 }
 
-/* ---------- 幕 7：体系结构（哈佛架构图，扁平 HUD） ---------- */
 function drawArch(t, P) {
   const midY = H * 0.44
   const imem = { x: 56, y: midY - 62, w: 150, h: 124 }
@@ -763,24 +885,128 @@ function drawArch(t, P) {
     ctx.fillStyle = rgba(P.bg, 1)
     ctx.fillText(['13', 'FF', '8'][k], rx - 7, busY3 + 4)
   }
-  const ckY = H - 26
-  ctx.strokeStyle = rgba(P.dim, 0.8)
-  ctx.lineWidth = 1.2
-  ctx.beginPath()
-  const ckX = 60
-  const ckW = 180
-  const periods = 4
-  for (let i = 0; i <= ckW; i += 2) {
-    const ph = (i / ckW) * periods + t * 1.2
-    const hi = Math.sin(ph * Math.PI * 2) > 0 ? 0 : -10
-    i === 0 ? ctx.moveTo(ckX + i, ckY + hi) : ctx.lineTo(ckX + i, ckY + hi)
-  }
-  ctx.stroke()
-  ctx.fillStyle = rgba(P.dim, 0.9)
+  if (!state.arch) state.arch = buildCacheSim()
+  const sim = state.arch
+  const stepDur = 0.18
+  const totalSteps = sim.steps.length
+  const si = Math.min(totalSteps - 1, Math.floor(t / stepDur))
+  const cur = sim.steps[si]
+  const frac = clamp(t / stepDur - si, 0, 1)
+  const cellS = clamp(Math.round(H * 0.033), 8, 13)
+  const memCell = clamp(Math.round(H * 0.023), 6, 9)
+  const l1Cols = 4
+  const l2Cols = 8
+  const l1w = l1Cols * (cellS + 2) - 2
+  const l1h = 2 * (cellS + 2) - 2
+  const l2w = l2Cols * (cellS + 2) - 2
+  const l2h = l1h
+  const memCols = 16
+  const memRows = 4
+  const memW = memCols * (memCell + 1.5) - 1.5
+  const memH = memRows * (memCell + 1.5) - 1.5
+  const stripBase = H - 34
+  const l1x = 60
+  const l1y = stripBase - l1h
+  const l2x = l1x + l1w + 46
+  const l2y = l1y
+  const memx = l2x + l2w + 52
+  const memy = stripBase - memH
+  const flashL1 = cur.l1.indexOf(cur.blk)
+  const flashL2 = cur.l2.indexOf(cur.blk)
+  const flashCol = cur.hit1 ? P.good : P.crit
   ctx.font = font(10)
-  ctx.fillText('clk', ckX + ckW + 10, ckY - 2)
+  const drawSlots = (gx, gy, cols, rows, cell, arr, base, flashIdx) => {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        const idx = i * cols + j
+        const x = gx + j * (cell + 2)
+        const y = gy + i * (cell + 2)
+        const occupied = arr[idx] >= 0
+        let fill
+        let edge
+        if (idx === flashIdx && frac < 0.6) {
+          fill = rgba(flashCol, 0.95)
+          edge = rgba(flashCol, 1)
+        } else if (occupied) {
+          fill = rgba(base, 0.5)
+          edge = rgba(base, 0.85)
+        } else {
+          fill = rgba(P.bg, 1)
+          edge = rgba(P.faint, 0.9)
+        }
+        ctx.fillStyle = fill
+        ctx.fillRect(x, y, cell, cell)
+        ctx.strokeStyle = edge
+        ctx.lineWidth = 1
+        ctx.strokeRect(x, y, cell, cell)
+      }
+    }
+  }
   ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText(`L1 · ${8} 行`, l1x, l1y - 8)
+  ctx.fillText(`L2 · ${16} 行`, l2x, l2y - 8)
+  ctx.fillText('主存 · 64 块', memx, memy - 8)
+  drawSlots(l1x, l1y, l1Cols, 2, cellS, cur.l1, P.accent, flashL1)
+  drawSlots(l2x, l2y, l2Cols, 2, cellS, cur.l2, P.accent, cur.hit2 || !cur.hit1 ? flashL2 : -1)
+  for (let i = 0; i < memRows; i++) {
+    for (let j = 0; j < memCols; j++) {
+      const idx = i * memCols + j
+      const x = memx + j * (memCell + 1.5)
+      const y = memy + i * (memCell + 1.5)
+      const isCur = idx === cur.blk
+      ctx.fillStyle = isCur && frac < 0.6 ? rgba(P.crit, 0.95) : rgba(P.dim, 0.28)
+      ctx.fillRect(x, y, memCell, memCell)
+      ctx.strokeStyle = isCur ? rgba(P.crit, 1) : rgba(P.faint, 0.8)
+      ctx.lineWidth = 1
+      ctx.strokeRect(x, y, memCell, memCell)
+    }
+  }
+  line(l1x + l1w + 6, l1y + l1h / 2, l2x - 8, l2y + l2h / 2, rgba(P.faint, 0.9), 1)
+  line(l2x + l2w + 6, l2y + l2h / 2, memx - 8, memy + memH / 2, rgba(P.faint, 0.9), 1)
+  const p1c = { x: l1x + l1w / 2, y: l1y + l1h / 2 }
+  const p2c = { x: l2x + l2w / 2, y: l2y + l2h / 2 }
+  const pmc = { x: memx + memW / 2, y: memy + memH / 2 }
+  let dot = p1c
+  let dotCol = P.good
+  if (!cur.hit1) {
+    dotCol = P.crit
+    if (cur.hit2) {
+      const u = Math.min(1, frac * 2)
+      dot = { x: lerp(p1c.x, p2c.x, u), y: lerp(p1c.y, p2c.y, u) }
+    } else {
+      dot =
+        frac < 0.5
+          ? { x: lerp(p1c.x, p2c.x, frac * 2), y: lerp(p1c.y, p2c.y, frac * 2) }
+          : { x: lerp(p2c.x, pmc.x, (frac - 0.5) * 2), y: lerp(p2c.y, pmc.y, (frac - 0.5) * 2) }
+    }
+  }
+  glowDot(dot.x, dot.y, 3, dotCol)
+  if (!cur.hit1) {
+    ctx.fillStyle = rgba(P.crit, 0.95)
+    ctx.fillText('MISS', l1x + l1w + 12, l1y + 6)
+  } else {
+    ctx.fillStyle = rgba(P.good, 0.95)
+    ctx.fillText('HIT', l1x + l1w + 12, l1y + 6)
+  }
+  if (!cur.hit1 && !cur.hit2) {
+    ctx.fillStyle = rgba(P.crit, 0.95)
+    ctx.fillText('MISS → 访存', l2x + l2w + 10, l2y + 6)
+  }
+  const rx = memx + memW + 40
   ctx.font = font(11)
+  ctx.fillStyle = rgba(P.ink, 0.92)
+  ctx.fillText(`访问 块 ${String(cur.blk).padStart(2, '0')}`, rx, l1y + 6)
+  const msg = cur.hit1 ? 'L1 命中' : cur.hit2 ? 'L1 MISS → L2 命中' : 'L1 MISS → L2 MISS → 访存'
+  ctx.fillStyle = cur.hit1 ? rgba(P.good, 1) : rgba(P.crit, 1)
+  ctx.fillText(msg, rx, l1y + 26)
+  ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText(
+    `L1 命中率 ${Math.round((cur.hits / (cur.hits + cur.misses)) * 100)}%  (${cur.hits}/${cur.hits + cur.misses})`,
+    rx,
+    l1y + 46
+  )
+  ctx.font = font(11)
+  ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.fillText('Harvard · 指令与数据总线分离', W - 330, 22)
 }
 
@@ -1056,7 +1282,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="hv-wrap" data-palette="violet">
     <div class="hv-frame">
-      <canvas ref="canvasRef" aria-label="概念动画：线性代数、矩阵分析、矢量分析、梯度下降、CNN、Transformer、哈佛架构与概率信息离散" />
+      <canvas ref="canvasRef" aria-label="概念动画：线性代数、矩阵分析、矢量分析、梯度下降二维流形、CNN、Transformer 全链路、哈佛架构与存储层次、概率信息离散" />
       <div class="hv-hud">
         <span class="hv-label">{{ SCENES[sceneIndex].label }}</span>
         <span class="hv-ticks">
