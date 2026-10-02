@@ -163,6 +163,22 @@ $\dim \mathbb{R}^2 = 2$，$\dim \mathbb{R}^n = n$.维数是空间的属性，不
 
 同一个向量，两组坐标.坐标系不是世界的一部分，是我们装上去的.
 
+**例题（教材风格）.** 已知 $\mathbf{e}_1$、$\mathbf{e}_2$ 是一组基底，$\mathbf{a} = 2\mathbf{e}_1 + \mathbf{e}_2$，$\mathbf{b} = -\mathbf{e}_1 + 3\mathbf{e}_2$. 用 $\mathbf{a}$、$\mathbf{b}$ 表示 $\mathbf{e}_1$.
+
+**解（高中）.** 设 $\mathbf{e}_1 = \alpha\mathbf{a} + \beta\mathbf{b}$，展开：
+
+$$
+\alpha(2\mathbf{e}_1 + \mathbf{e}_2) + \beta(-\mathbf{e}_1 + 3\mathbf{e}_2)
+= (2\alpha - \beta)\mathbf{e}_1 + (\alpha + 3\beta)\mathbf{e}_2.
+$$
+
+因为 $\mathbf{e}_1$、$\mathbf{e}_2$ 线性无关（它们是基底），比较系数得 $2\alpha - \beta = 1$、$\alpha + 3\beta = 0$，解得 $\alpha = \frac37$、$\beta = -\frac17$. 所以
+
+$$
+\mathbf{e}_1 = \frac37\mathbf{a} - \frac17\mathbf{b}.
+$$
+
+**线代读法.** 这就是"换基"的手算版：两组基底之间的坐标换算，本质是解一个 $2 \times 2$ 方程组. 高中课本里"用一组基底表示向量"和这一章的"坐标"，是同一件事的两个名字.
 ## 实验：拖出你自己的基
 
 实验里有两个可拖的向量 $\mathbf{v}_1$、$\mathbf{v}_2$，一个可拖的目标 $\mathbf{w}$，还有一组实时读数.

@@ -206,6 +206,19 @@ $$
 > $$
 > 拿 $\mathbf{v} = (3,4)$、$\mathbf{u} = (1,0)$ 验证：投影是 $(3,0)$、余项是 $(0,4)$，$3^2 + 4^2 = 5^2$.
 
+**例题（教材风格）.** 求点 $P(2, 3)$ 到直线 $3x + 4y - 1 = 0$ 的距离.
+
+**解（高中）.** 套公式：$d = \dfrac{|3 \times 2 + 4 \times 3 - 1|}{\sqrt{3^2 + 4^2}} = \dfrac{17}{5} = 3.4$.
+
+**线代读法.** 直线的一个法向量是 $\mathbf{n} = (3,4)$（系数行），线上取一点 $Q(0, \frac14)$（代入 $x = 0$ 解得 $y = \frac14$）. 把 $\overrightarrow{QP} = (2, \frac{11}{4})$ 投影到 $\mathbf{n}$：
+
+$$
+\operatorname{proj}_{\mathbf{n}}\overrightarrow{QP}
+= \frac{\overrightarrow{QP}\cdot\mathbf{n}}{|\mathbf{n}|^2}\mathbf{n}
+= \frac{17}{25}(3,4),
+$$
+
+长度 $= \frac{17}{25} \times 5 = \frac{17}{5} = 3.4$——与公式一致. **高中的"点到直线距离公式"就是"$\overrightarrow{QP}$ 在法向量上的投影长度"**：分子 $\overrightarrow{QP}\cdot\mathbf{n}$ 是点积，分母 $|\mathbf{n}|$ 把投影系数拉回长度. 选必一 2.3.3 背下来的公式，这里是它的一句话证明.
 ## 线性泛函与内积：有限维 Riesz 表示
 
 上一章说 $A$ 的每一行是线性泛函；这一节说明：在有限维里，线性泛函就是内积的化身——每个泛函都是"和某个固定向量做内积".
