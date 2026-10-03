@@ -291,7 +291,7 @@ function drawLA(t, P) {
 
 /* ---------- 幕 2：矩阵分析（正交化，真三维） ---------- */
 function drawGS(t, P) {
-  const cam = camera3(-0.55 + 0.4 * Math.sin(t * 0.5), 0.62 + 0.06 * Math.sin(t * 0.4), 6.1, 560)
+  const cam = camera3(-0.55 + 0.4 * Math.sin(t * 0.5), 0.62 + 0.06 * Math.sin(t * 0.4), 5.6, 560)
   const pr = (p) => project3({ x: p[0], y: p[1], z: p[2] }, cam)
   const seg = (p, q, color, width = 1.4, dash = null) => {
     const a = pr(p)
@@ -308,9 +308,17 @@ function drawGS(t, P) {
   const lab = (p, text, color, dx = 6, dy = -6) => {
     const a = pr(p)
     if (!a) return
-    ctx.fillStyle = color
     ctx.font = font(11)
-    ctx.fillText(text, a.x + dx, a.y + dy)
+    const w = ctx.measureText(text).width
+    const x = a.x + dx
+    const y = a.y + dy
+    ctx.fillStyle = 'rgba(6, 5, 12, 0.82)'
+    ctx.fillRect(x - 4, y - 11, w + 8, 15)
+    ctx.strokeStyle = rgba(color, 0.5)
+    ctx.lineWidth = 1
+    ctx.strokeRect(x - 4, y - 11, w + 8, 15)
+    ctx.fillStyle = rgba(color, 1)
+    ctx.fillText(text, x, y)
   }
   ctx.lineWidth = 1
   ctx.strokeStyle = rgba(P.faint, 0.55)
@@ -333,8 +341,8 @@ function drawGS(t, P) {
   const O = [0, 0, 0]
   const dt3 = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
   const n3 = (v) => Math.hypot(v[0], v[1], v[2])
-  const a1 = [1.6, 0.28, 0.62]
-  const a2 = [0.42, 1.45, -0.28]
+  const a1 = [1.7, 0.3, 0.65]
+  const a2 = [0.45, 1.55, -0.3]
   const n1 = n3(a1)
   const e1 = a1.map((x) => x / n1)
   const c2 = dt3(a2, e1)
@@ -357,16 +365,16 @@ function drawGS(t, P) {
     ctx.fill()
   }
   const mid = (v, k) => v.map((x) => x * k)
-  arr(O, a1, rgba(P.ink, 0.65), 1.7, 5)
-  lab(mid(a1, 0.6), 'a₁', rgba(P.ink, 0.85), -26, 4)
+  arr(O, a1, rgba(P.ink, 0.65 - 0.35 * p1), 1.7, 5)
+  lab(mid(a1, 0.62), 'a₁', P.ink, -36, 8)
   arr(O, a2, rgba(P.ink, 0.65), 1.7, 5)
-  lab(a2, 'a₂', rgba(P.ink, 0.85), 12, -8)
+  lab(a2, 'a₂', P.ink, 14, -12)
   if (p1 > 0.01) {
     ctx.globalAlpha = p1
     arr(O, e1, rgba(P.accent, 0.95), 2, 6)
     const g1 = pr(e1)
     if (g1) glowDot(g1.x, g1.y, 2.2, P.accent)
-    lab(e1, 'e₁', rgba(P.accent, 1), 9, 18)
+    lab(e1, 'e₁', P.accent, 10, 16)
     ctx.globalAlpha = 1
   }
   if (p2 > 0.01) {
@@ -374,8 +382,8 @@ function drawGS(t, P) {
     const foot = e1.map((x) => x * c2)
     seg(O, foot, rgba(P.warn, 0.7), 1.4, [5, 4])
     seg(a2, foot, rgba(P.warn, 0.5), 1, [3, 3])
-    arr(O, b2, rgba(P.warn, 0.9), 1.8, 5)
-    lab(mid(b2, 0.55), 'b₂ = a₂ − 投影', rgba(P.warn, 0.95), 14, 20)
+    arr(O, b2, rgba(P.warn, 0.9 - 0.5 * p3), 1.8, 5)
+    lab(mid(b2, 0.6), 'b₂', P.warn, 16, 20)
     const fp = pr(foot)
     if (fp) {
       ctx.beginPath()
@@ -390,7 +398,7 @@ function drawGS(t, P) {
     arr(O, e2, rgba(P.good, 0.95), 2, 6)
     const g2 = pr(e2)
     if (g2) glowDot(g2.x, g2.y, 2.2, P.good)
-    lab(e2, 'e₂', rgba(P.good, 1), 8, -8)
+    lab(e2, 'e₂', P.good, 10, -12)
     const r = 0.24
     const r1 = e1.map((x) => x * r)
     const r2 = e1.map((x, i) => (x + e2[i]) * r)
@@ -1230,11 +1238,11 @@ function frame(now) {
     const x = p * W
     const sweep = ctx.createLinearGradient(x - 110, 0, x + 110, 0)
     sweep.addColorStop(0, rgba(P.accent, 0))
-    sweep.addColorStop(0.5, rgba(P.hot, 0.25))
+    sweep.addColorStop(0.5, rgba(P.hot, 0.18))
     sweep.addColorStop(1, rgba(P.accent, 0))
     ctx.fillStyle = sweep
     ctx.fillRect(x - 110, 0, 220, H)
-    ctx.fillStyle = rgba(P.accent, 0.1 * (1 - p))
+    ctx.fillStyle = rgba(P.accent, 0.07 * (1 - p))
     ctx.fillRect(0, 0, W, H)
     flashT = Math.max(0, flashT - dt)
   }
