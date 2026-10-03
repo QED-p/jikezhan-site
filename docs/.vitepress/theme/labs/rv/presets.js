@@ -100,11 +100,12 @@ ecall`,
     }
   },
   {
-    id: 'qsort',
-    name: '随机数 + 快排',
-    note: '递归快排（Lomuto 分区）· 栈、jal/jalr 与访存全家桶',
+    id: 'msort',
+    name: '随机数 + 归并',
+    note: '递归归并排序（辅助数组 + 栈）· 访存/分支/返回指令混合',
     asm: `# 1) 生成 8 个伪随机数：seed = (seed*5 + 1) mod 256
 li x10, 256
+li x9, 320
 li x2, 512
 li x5, 1
 li x6, 0
@@ -120,65 +121,101 @@ sw x5, 0(x7)
 addi x6, x6, 1
 blt x6, x12, gen
 
-# 2) 快排(a, 0, n-1)
+# 2) 归并排序 a[0..n-1]，辅助数组在 0x140
 li x11, 0
 addi x12, x12, -1
-jal x1, qsort
+jal x1, msort
 ecall
 
-# ---- qsort(a0=base, a1=lo, a2=hi) ----
-qsort:
-bge x11, x12, qret
+# ---- msort(a0=base, a1=lo, a2=hi) ----
+msort:
+bge x11, x12, msort_ret
 addi x2, x2, -16
 sw x1, 0(x2)
 sw x11, 4(x2)
 sw x12, 8(x2)
-jal x1, partition
-sw x18, 12(x2)
-addi x12, x18, -1
-jal x1, qsort
+add x5, x11, x12
+srli x5, x5, 1
+sw x5, 12(x2)
+add x12, x5, x0
+jal x1, msort
 lw x11, 4(x2)
 lw x12, 8(x2)
-lw x18, 12(x2)
-addi x11, x18, 1
-jal x1, qsort
+lw x5, 12(x2)
+addi x11, x5, 1
+jal x1, msort
+lw x11, 4(x2)
+lw x12, 8(x2)
+lw x5, 12(x2)
+jal x1, merge
 lw x1, 0(x2)
 addi x2, x2, 16
-qret:
+msort_ret:
 jalr x0, x1, 0
 
-# ---- partition(a0=base, a1=lo, a2=hi) -> p in x18 ----
-partition:
-slli x16, x12, 2
-add x16, x16, x10
-lw x15, 0(x16)
-addi x13, x11, -1
-mv x14, x11
-ploop:
-bge x14, x12, pdone
-slli x16, x14, 2
-add x16, x16, x10
-lw x17, 0(x16)
-bge x17, x15, pnext
-addi x13, x13, 1
+# ---- merge(a0=base, a1=lo, a2=hi; x5=mid, x9=aux) ----
+merge:
+add x13, x11, x0
+addi x14, x5, 1
+add x15, x11, x0
+merge_loop:
+blt x5, x13, merge_tail_j
+blt x12, x14, merge_tail_i
 slli x6, x13, 2
 add x6, x6, x10
-lw x7, 0(x6)
-sw x17, 0(x6)
-sw x7, 0(x16)
-pnext:
-addi x14, x14, 1
-j ploop
-pdone:
-addi x18, x13, 1
-slli x6, x18, 2
-add x6, x6, x10
-slli x7, x12, 2
+slli x7, x14, 2
 add x7, x7, x10
 lw x16, 0(x6)
 lw x17, 0(x7)
+blt x17, x16, merge_take_j
+slli x6, x15, 2
+add x6, x6, x9
+sw x16, 0(x6)
+addi x13, x13, 1
+j merge_next
+merge_take_j:
+slli x6, x15, 2
+add x6, x6, x9
 sw x17, 0(x6)
+addi x14, x14, 1
+merge_next:
+addi x15, x15, 1
+j merge_loop
+merge_tail_i:
+blt x5, x13, merge_copy
+slli x6, x13, 2
+add x6, x6, x10
+lw x16, 0(x6)
+slli x7, x15, 2
+add x7, x7, x9
 sw x16, 0(x7)
+addi x13, x13, 1
+addi x15, x15, 1
+j merge_tail_i
+merge_tail_j:
+blt x12, x14, merge_copy
+slli x6, x14, 2
+add x6, x6, x10
+lw x16, 0(x6)
+slli x7, x15, 2
+add x7, x7, x9
+sw x16, 0(x7)
+addi x14, x14, 1
+addi x15, x15, 1
+j merge_tail_j
+merge_copy:
+add x15, x11, x0
+merge_copy_loop:
+blt x12, x15, merge_ret
+slli x6, x15, 2
+add x6, x6, x9
+lw x16, 0(x6)
+slli x7, x15, 2
+add x7, x7, x10
+sw x16, 0(x7)
+addi x15, x15, 1
+j merge_copy_loop
+merge_ret:
 jalr x0, x1, 0`,
     expect: {
       regs: { 12: 7 },
