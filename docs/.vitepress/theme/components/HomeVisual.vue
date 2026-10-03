@@ -7,7 +7,7 @@ const reduced = ref(false)
 
 const SCENES = [
   { key: 'la', label: '线性代数 · 特征方向（三维）' },
-  { key: 'gs', label: '矩阵分析 · 正交化' },
+  { key: 'gs', label: '矩阵分析 · 正交化（三维）' },
   { key: 'va', label: '矢量分析 · 梯度、散度与旋度' },
   { key: 'gd', label: '梯度下降 · 三维损失曲面' },
   { key: 'cnn', label: 'CNN · 卷积核' },
@@ -144,14 +144,13 @@ function norm3(a) {
   const n = Math.hypot(a.x, a.y, a.z) || 1
   return { x: a.x / n, y: a.y / n, z: a.z / n }
 }
-function camera3(theta, phi) {
-  const d = 8.4
+function camera3(theta, phi, d = 8.4, f = 560) {
   const cp = Math.cos(phi)
   const eye = { x: d * cp * Math.cos(theta), y: d * cp * Math.sin(theta), z: d * Math.sin(phi) }
   const fwd = norm3({ x: -eye.x, y: -eye.y, z: -eye.z })
   const right = norm3(cross3(fwd, { x: 0, y: 0, z: 1 }))
   const up = cross3(right, fwd)
-  return { eye, fwd, right, up, f: 560, cx: W / 2, cy: H / 2 + 8 }
+  return { eye, fwd, right, up, f, cx: W / 2, cy: H / 2 + 8 }
 }
 function project3(p, c) {
   const v = sub3(p, c.eye)
@@ -290,84 +289,114 @@ function drawLA(t, P) {
   ctx.fillText(`det ${det.toFixed(2)}   tr ${tr.toFixed(2)}   A·v → Av`, W - 250, 22)
 }
 
-/* ---------- 幕 2：矩阵分析（正交化，倾斜平面） ---------- */
-const tilt = (x, y) => [x - 0.38 * y, 0.26 * x + 0.74 * y]
+/* ---------- 幕 2：矩阵分析（正交化，真三维） ---------- */
 function drawGS(t, P) {
-  const v = view(5.8, 4.3)
-  const X = v.X
-  const Y = v.Y
-  ctx.strokeStyle = rgba(P.faint, 0.5)
+  const cam = camera3(-0.55 + 0.4 * Math.sin(t * 0.5), 0.62 + 0.06 * Math.sin(t * 0.4), 6.1, 560)
+  const pr = (p) => project3({ x: p[0], y: p[1], z: p[2] }, cam)
+  const seg = (p, q, color, width = 1.4, dash = null) => {
+    const a = pr(p)
+    const b = pr(q)
+    if (!a || !b) return
+    line(a.x, a.y, b.x, b.y, color, width, dash)
+  }
+  const arr = (p, q, color, width = 1.6, head = 6) => {
+    const a = pr(p)
+    const b = pr(q)
+    if (!a || !b) return
+    arrow(a.x, a.y, b.x, b.y, color, width, head)
+  }
+  const lab = (p, text, color, dx = 6, dy = -6) => {
+    const a = pr(p)
+    if (!a) return
+    ctx.fillStyle = color
+    ctx.font = font(11)
+    ctx.fillText(text, a.x + dx, a.y + dy)
+  }
   ctx.lineWidth = 1
+  ctx.strokeStyle = rgba(P.faint, 0.55)
   for (let k = -2; k <= 2; k += 0.5) {
     ctx.beginPath()
     for (let u = -2; u <= 2.001; u += 0.25) {
-      const [tx, ty] = tilt(k, u)
-      u === -2 ? ctx.moveTo(X(tx), Y(ty)) : ctx.lineTo(X(tx), Y(ty))
+      const p = pr([k, u, 0])
+      if (!p) continue
+      u === -2 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
     }
     ctx.stroke()
     ctx.beginPath()
     for (let u = -2; u <= 2.001; u += 0.25) {
-      const [tx, ty] = tilt(u, k)
-      u === -2 ? ctx.moveTo(X(tx), Y(ty)) : ctx.lineTo(X(tx), Y(ty))
+      const p = pr([u, k, 0])
+      if (!p) continue
+      u === -2 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
     }
     ctx.stroke()
   }
-  const T = (x, y) => {
-    const [tx, ty] = tilt(x, y)
-    return [X(tx), Y(ty)]
-  }
-  const a1 = [1.35, 0.35]
-  const a2 = [0.55, 1.25]
-  const n1 = Math.hypot(a1[0], a1[1])
-  const e1 = [a1[0] / n1, a1[1] / n1]
-  const c2 = a2[0] * e1[0] + a2[1] * e1[1]
-  const b2 = [a2[0] - c2 * e1[0], a2[1] - c2 * e1[1]]
-  const n2 = Math.hypot(b2[0], b2[1])
-  const e2 = [b2[0] / n2, b2[1] / n2]
+  const O = [0, 0, 0]
+  const dt3 = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+  const n3 = (v) => Math.hypot(v[0], v[1], v[2])
+  const a1 = [1.6, 0.28, 0.62]
+  const a2 = [0.42, 1.45, -0.28]
+  const n1 = n3(a1)
+  const e1 = a1.map((x) => x / n1)
+  const c2 = dt3(a2, e1)
+  const b2 = a2.map((x, i) => x - c2 * e1[i])
+  const n2 = n3(b2)
+  const e2 = b2.map((x) => x / n2)
   const ph = t / DUR[1]
   const p1 = smooth(clamp((ph - 0.06) / 0.22, 0, 1))
   const p2 = smooth(clamp((ph - 0.3) / 0.3, 0, 1))
   const p3 = smooth(clamp((ph - 0.62) / 0.24, 0, 1))
-  const [ox, oy] = T(0, 0)
-  let p = T(a1[0], a1[1])
-  arrow(ox, oy, p[0], p[1], rgba(P.ink, 0.6), 1.6, 5)
-  ctx.fillStyle = rgba(P.ink, 0.85)
-  ctx.font = font(11)
-  ctx.fillText('a₁', p[0] + 6, p[1] - 6)
-  p = T(a2[0], a2[1])
-  arrow(ox, oy, p[0], p[1], rgba(P.ink, 0.6), 1.6, 5)
-  ctx.fillStyle = rgba(P.ink, 0.85)
-  ctx.fillText('a₂', p[0] + 6, p[1] - 6)
+  const o = pr(O)
+  if (o) {
+    const pulse = 7 + 2.5 * Math.sin(t * 6)
+    const rg = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, pulse * 2.4)
+    rg.addColorStop(0, rgba(P.accent, 0.25))
+    rg.addColorStop(1, rgba(P.accent, 0))
+    ctx.fillStyle = rg
+    ctx.beginPath()
+    ctx.arc(o.x, o.y, pulse * 2.4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  const mid = (v, k) => v.map((x) => x * k)
+  arr(O, a1, rgba(P.ink, 0.65), 1.7, 5)
+  lab(mid(a1, 0.6), 'a₁', rgba(P.ink, 0.85), -26, 4)
+  arr(O, a2, rgba(P.ink, 0.65), 1.7, 5)
+  lab(a2, 'a₂', rgba(P.ink, 0.85), 12, -8)
   if (p1 > 0.01) {
     ctx.globalAlpha = p1
-    p = T(e1[0], e1[1])
-    arrow(ox, oy, p[0], p[1], rgba(P.accent, 0.95), 2, 6)
-    ctx.fillStyle = rgba(P.accent, 1)
-    ctx.fillText('e₁', p[0] + 6, p[1] + 16)
+    arr(O, e1, rgba(P.accent, 0.95), 2, 6)
+    const g1 = pr(e1)
+    if (g1) glowDot(g1.x, g1.y, 2.2, P.accent)
+    lab(e1, 'e₁', rgba(P.accent, 1), 9, 18)
     ctx.globalAlpha = 1
   }
   if (p2 > 0.01) {
     ctx.globalAlpha = p2
-    const foot = T(c2 * e1[0], c2 * e1[1])
-    const at = T(a2[0], a2[1])
-    line(ox, oy, foot[0], foot[1], rgba(P.warn, 0.7), 1.4, [5, 4])
-    line(at[0], at[1], foot[0], foot[1], rgba(P.warn, 0.5), 1, [3, 3])
-    p = T(b2[0], b2[1])
-    arrow(ox, oy, p[0], p[1], rgba(P.warn, 0.9), 1.8, 5)
-    ctx.fillStyle = rgba(P.warn, 0.95)
-    ctx.fillText('b₂ = a₂ − 投影', p[0] + 8, p[1] + 14)
+    const foot = e1.map((x) => x * c2)
+    seg(O, foot, rgba(P.warn, 0.7), 1.4, [5, 4])
+    seg(a2, foot, rgba(P.warn, 0.5), 1, [3, 3])
+    arr(O, b2, rgba(P.warn, 0.9), 1.8, 5)
+    lab(mid(b2, 0.55), 'b₂ = a₂ − 投影', rgba(P.warn, 0.95), 14, 20)
+    const fp = pr(foot)
+    if (fp) {
+      ctx.beginPath()
+      ctx.arc(fp.x, fp.y, 3, 0, Math.PI * 2)
+      ctx.fillStyle = rgba(P.warn, 0.8)
+      ctx.fill()
+    }
     ctx.globalAlpha = 1
   }
   if (p3 > 0.01) {
     ctx.globalAlpha = p3
-    p = T(e2[0], e2[1])
-    arrow(ox, oy, p[0], p[1], rgba(P.good, 0.95), 2, 6)
-    ctx.fillStyle = rgba(P.good, 1)
-    ctx.fillText('e₂', p[0] + 6, p[1] - 6)
-    const r1 = T(0.22 * e1[0], 0.22 * e1[1])
-    const r2 = T(0.22 * e1[0] + 0.22 * e2[0], 0.22 * e1[1] + 0.22 * e2[1])
-    const r3 = T(0.22 * e2[0], 0.22 * e2[1])
-    poly([[r1[0], r1[1]], [r2[0], r2[1]], [r3[0], r3[1]]], null, rgba(P.hot, 0.8), 1.2)
+    arr(O, e2, rgba(P.good, 0.95), 2, 6)
+    const g2 = pr(e2)
+    if (g2) glowDot(g2.x, g2.y, 2.2, P.good)
+    lab(e2, 'e₂', rgba(P.good, 1), 8, -8)
+    const r = 0.24
+    const r1 = e1.map((x) => x * r)
+    const r2 = e1.map((x, i) => (x + e2[i]) * r)
+    const r3 = e2.map((x) => x * r)
+    seg(r1, r2, rgba(P.hot, 0.8), 1.2)
+    seg(r3, r2, rgba(P.hot, 0.8), 1.2)
     ctx.globalAlpha = 1
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
