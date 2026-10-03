@@ -380,7 +380,7 @@ const ctrlOf = (key) => {
   color: var(--hud-good);
   border-color: var(--hud-good);
 }
-@media (max-width: 900px) {
+@container (max-width: 900px) {
   .rvp-grid {
     grid-template-columns: 1fr;
     grid-template-areas: 'imem' 'regs' 'dmem' 'latches';

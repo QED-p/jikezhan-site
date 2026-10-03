@@ -5,10 +5,13 @@ layout: page
 
 <script setup>
 import LMLab from '../.vitepress/theme/labs/LMLab.vue'
+import ForceLandscape from '../.vitepress/theme/components/ForceLandscape.vue'
 </script>
 
 <div class="lab-page">
-  <LMLab />
+  <ForceLandscape>
+    <LMLab />
+  </ForceLandscape>
   <p class="lab-caption">
     字符级 Transformer 在浏览器内真实训练：前向传播、反向传播、Adam 更新全部本地执行.
   </p>

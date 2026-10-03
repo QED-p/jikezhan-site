@@ -5,10 +5,13 @@ layout: page
 
 <script setup>
 import RvPipeline from '../.vitepress/theme/components/RvPipeline.vue'
+import ForceLandscape from '../.vitepress/theme/components/ForceLandscape.vue'
 </script>
 
 <div class="lab-page">
-  <RvPipeline />
+  <ForceLandscape>
+    <RvPipeline />
+  </ForceLandscape>
   <p class="lab-caption">
     周期精确的五级流水线在浏览器内真实执行：控制信号、转发旁路、停顿与冲刷逐拍可见；点部件看内部实现.
   </p>

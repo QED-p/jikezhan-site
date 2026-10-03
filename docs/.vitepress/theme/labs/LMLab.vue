@@ -755,7 +755,7 @@ const pad3 = (v) => String(v).padStart(3, '0')
   margin-top: 34px;
   align-items: start;
 }
-@media (max-width: 1640px) {
+@container (max-width: 1560px) {
   .lm-controls,
   .lm-body {
     grid-template-columns: minmax(0, 1fr);
@@ -770,7 +770,7 @@ const pad3 = (v) => String(v).padStart(3, '0')
   gap: 28px;
   align-items: start;
 }
-@media (max-width: 1790px) {
+@container (max-width: 1710px) {
   .lm-map-grid {
     grid-template-columns: minmax(0, 1fr);
   }
