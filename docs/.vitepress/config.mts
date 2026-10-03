@@ -21,7 +21,7 @@ export default defineConfig({
   title: '极客栈',
   description: '体系结构与机器学习教程站：从人教A版出发的线性代数与矩阵分析，每个概念配一个可拖动的实验.',
   cleanUrls: true,
-  sitemap: { hostname: 'https://club.qedlab.cn' },
+  sitemap: { hostname: 'https://geekstk.com' },
   vite: { build: { chunkSizeWarningLimit: 1600 } },
   appearance: 'force-dark',
   head: [

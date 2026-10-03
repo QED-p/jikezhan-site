@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://club.qedlab.cn/sitemap.xml
+Sitemap: https://geekstk.com/sitemap.xml
