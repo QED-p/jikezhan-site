@@ -699,9 +699,12 @@ function drawGD(t, P) {
 /* ---------- 幕 5：CNN（扁平 HUD） ---------- */
 function drawCNN(t, P) {
   const n = 7
-  const cell = Math.min(20, H / 17)
+  const gap1 = W < 560 ? 26 : 34
+  const gap2 = W < 560 ? 30 : 40
+  const cell = Math.max(6, Math.min(20, H / 17, (W - gap1 - gap2 - 16) / 15.6))
+  const layoutW = cell * 15.6 + gap1 + gap2
+  const ix = Math.max(8, (W - layoutW) / 2)
   const val = (j) => (j === 3 ? 1 : j === 2 || j === 4 ? 0.5 : 0.15)
-  const ix = W * 0.1
   const iy = (H - n * cell) / 2 + 8
   ctx.font = font(10)
   for (let i = 0; i < n; i++) {
@@ -722,8 +725,6 @@ function drawCNN(t, P) {
   ctx.strokeRect(ix + kc * cell - 1, iy + kr * cell - 1, cell * 3 + 1, cell * 3 + 1)
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.fillText('输入 7×7', ix, iy - 10)
-  const gap1 = W < 560 ? 24 : 34
-  const gap2 = W < 560 ? 28 : 40
   const kx = ix + n * cell + gap1
   ctx.fillText('卷积核 3×3', kx, iy - 10)
   const kk = [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]
@@ -847,34 +848,40 @@ function drawTFMobile(t, P) {
 
 function drawTF(t, P) {
   if (W < 560) return drawTFMobile(t, P)
-  const stageNames = ['Token', 'Embedding', 'Q / K / V', 'Attention', 'FFN', 'Output']
+  const stageNames = ['Token', 'Embedding', 'Q/K/V', 'Attention', 'FFN', 'Output']
   const nStage = stageNames.length
-  const bw = Math.min(168, (W - 80) / nStage - 18)
-  const gap = (W - 80 - nStage * bw) / (nStage - 1)
-  const x0 = 40
+  const margin = 16
+  const bw = Math.max(70, Math.min(168, (W - 2 * margin - (nStage - 1) * 14) / nStage))
+  const gap = (W - 2 * margin - nStage * bw) / (nStage - 1)
+  const x0 = margin
   const midY = H * 0.47
-  const bh = 132
+  const bh = Math.min(132, Math.max(104, H - 96))
+  const k = bw / 168
+  const cw = Math.max(4, Math.round(7 * k))
+  const fsz = Math.max(8, Math.round(10 * k))
   const cycle = t / 0.62
   const stageW = Math.floor(cycle) % nStage
   const inStage = cycle - Math.floor(cycle)
-  ctx.font = font(10)
+  ctx.font = font(fsz)
   const hash2 = (i, j) => {
     const h = Math.sin(i * 127.1 + j * 311.7 + Math.floor(t * 3) * 74.7) * 43758.5453
     return h - Math.floor(h)
   }
-  const paramGrid = (x, y, cols, rows, cw) => {
+  const paramGrid = (x, y, cols, rows, cell) => {
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         ctx.fillStyle = rgba(P.accent, 0.18 + hash2(i + x, j + y) * 0.55)
-        ctx.fillRect(x + j * (cw + 1), y + i * (cw + 1), cw, cw)
+        ctx.fillRect(x + j * (cell + 1), y + i * (cell + 1), cell, cell)
         ctx.strokeStyle = rgba(P.faint, 0.9)
         ctx.lineWidth = 1
-        ctx.strokeRect(x + j * (cw + 1), y + i * (cw + 1), cw, cw)
+        ctx.strokeRect(x + j * (cell + 1), y + i * (cell + 1), cell, cell)
       }
     }
   }
   const bars = [0.55, 0.24, 0.13, 0.08]
   const outNames = ['客', '栈', '是', '的']
+  const tokenW = Math.max(24, Math.round((bw - 30) / 2))
+  const tokenH = Math.max(20, Math.round(28 * k + 6))
   for (let sIdx = 0; sIdx < nStage; sIdx++) {
     const x = x0 + sIdx * (bw + gap)
     const active = sIdx === stageW
@@ -882,57 +889,71 @@ function drawTF(t, P) {
     ctx.lineWidth = active ? 1.6 : 1
     ctx.strokeRect(x, midY - bh / 2, bw, bh)
     ctx.fillStyle = rgba(active ? P.accent : P.dim, 0.95)
-    ctx.fillText(stageNames[sIdx], x + 8, midY - bh / 2 - 8)
+    ctx.font = font(fsz)
+    ctx.fillText(stageNames[sIdx], x + 6, midY - bh / 2 - 6)
     if (sIdx === 0) {
       const toks = ['极', '客', '栈', '是']
       toks.forEach((tk, i) => {
-        const cx = x + 18 + (i % 2) * 64
-        const cy = midY - 52 + Math.floor(i / 2) * 44
+        const cx = x + 10 + (i % 2) * (tokenW + 6)
+        const cy = midY - bh / 2 + 16 + Math.floor(i / 2) * (tokenH + 10)
         ctx.strokeStyle = rgba(P.ink, 0.8)
-        ctx.strokeRect(cx, cy, 50, 30)
+        ctx.strokeRect(cx, cy, tokenW, tokenH)
         ctx.fillStyle = rgba(P.ink, 0.95)
-        ctx.font = font(13)
-        ctx.fillText(tk, cx + 18, cy + 20)
-        ctx.font = font(10)
+        ctx.font = font(Math.max(10, Math.round(13 * k + 2)))
+        ctx.fillText(tk, cx + tokenW * 0.3, cy + tokenH * 0.7)
+        ctx.font = font(fsz)
       })
     } else if (sIdx === 1) {
-      paramGrid(x + 18, midY - 40, 8, 6, 7)
+      paramGrid(x + 8, midY - 40, 8, 6, cw)
       const row = stageW === sIdx ? Math.floor(inStage * 6) % 6 : 0
       ctx.fillStyle = rgba(P.hot, 0.95)
-      ctx.fillRect(x + 18 + row * 8, midY - 40 + row * 8, 7, 7)
+      ctx.fillRect(x + 8 + row * (cw + 1), midY - 40 + row * (cw + 1), cw, cw)
     } else if (sIdx === 2) {
-      ;[['Wq', 0], ['Wk', 1], ['Wv', 2]].forEach((pair) => {
-        const lb = pair[0]
-        const i = pair[1]
-        paramGrid(x + 14 + i * 52, midY - 32, 5, 5, 6)
+      const gw = 5 * (cw + 1) - 1
+      const total = gw * 3 + 12
+      const gx = x + (bw - total) / 2
+      ;['Wq', 'Wk', 'Wv'].forEach((lb, i) => {
+        paramGrid(gx + i * (gw + 6), midY - 34, 5, 5, cw)
         ctx.fillStyle = rgba(P.ink, 0.9)
-        ctx.fillText(lb, x + 14 + i * 52, midY + 18)
+        ctx.fillText(lb, gx + i * (gw + 6), midY + 20)
       })
     } else if (sIdx === 3) {
+      const hc = Math.max(7, Math.round(11 * k))
+      const hw = 5 * (hc + 1) - 1
+      const hx = x + (bw - hw) / 2
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
           const a = 0.08 + Math.max(0, Math.sin(i * 1.2 + j * 0.9 + t * 2)) * 0.5
           ctx.fillStyle = rgba(P.accent, a)
-          ctx.fillRect(x + 18 + j * 13, midY - 40 + i * 13, 12, 12)
+          ctx.fillRect(hx + j * (hc + 1), midY - 38 + i * (hc + 1), hc, hc)
         }
       }
       ctx.fillStyle = rgba(P.dim, 0.95)
-      ctx.fillText('softmax(QKᵀ/√d)', x + 18, midY + 46)
+      ctx.font = font(Math.max(8, fsz - 1))
+      ctx.fillText('softmax(QKᵀ/√d)', x + 6, midY + 46)
+      ctx.font = font(fsz)
     } else if (sIdx === 4) {
-      paramGrid(x + 16, midY - 42, 5, 4, 7)
-      paramGrid(x + 82, midY - 42, 4, 5, 7)
+      const g1w = 5 * (cw + 1) - 1
+      const g2w = 4 * (cw + 1) - 1
+      const total = g1w + g2w + 8
+      const gx = x + (bw - total) / 2
+      paramGrid(gx, midY - 30, 5, 4, cw)
+      paramGrid(gx + g1w + 8, midY - 30, 4, 5, cw)
       ctx.fillStyle = rgba(P.ink, 0.9)
-      ctx.fillText('W₁', x + 16, midY + 34)
-      ctx.fillText('W₂', x + 82, midY + 34)
+      ctx.fillText('W1', gx, midY + 36)
+      ctx.fillText('W2', gx + g1w + 8, midY + 36)
       ctx.fillStyle = rgba(P.dim, 0.95)
-      ctx.fillText('ReLU', x + 52, midY - 50)
+      ctx.font = font(Math.max(8, fsz - 1))
+      ctx.fillText('ReLU', x + (bw - 24) / 2, midY - 42)
+      ctx.font = font(fsz)
     } else {
+      const hbar = Math.max(10, Math.round(16 * k))
       outNames.forEach((nm, i) => {
-        const bwid = bars[i] * (bw - 64)
+        const bwid = bars[i] * (bw - 52)
         ctx.fillStyle = rgba(i === 0 ? P.accent : P.dim, i === 0 ? 0.85 : 0.5)
-        ctx.fillRect(x + 16, midY - 44 + i * 24, bwid, 16)
+        ctx.fillRect(x + 12, midY - 44 + i * (hbar + 8), bwid, hbar)
         ctx.fillStyle = rgba(P.ink, 0.9)
-        ctx.fillText(nm, x + 16 + bwid + 6, midY - 32 + i * 24)
+        ctx.fillText(nm, x + 14 + bwid + 4, midY - 44 + i * (hbar + 8) + hbar - 3)
       })
     }
   }
@@ -951,12 +972,9 @@ function drawTF(t, P) {
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(
-    W >= 560 ? '前向：token → xW + b → softmax → 下一个 token' : 'token → xW+b → softmax → 下个 token',
-    W >= 560 ? W - 430 : 14,
-    26
-  )
+  ctx.fillText('前向：token → xW + b → softmax → 下一个 token', W - 430, 22)
 }
+
 /* ---------- 幕 7：体系结构（哈佛架构图 + 存储层次，扁平 HUD） ---------- */
 function buildCacheSim() {
   const seq = [3, 7, 3, 12, 7, 20, 3, 12, 7, 5, 20, 3, 9, 7, 12, 3, 28, 5, 9, 20, 44, 7, 28, 9, 52, 3, 7, 44]
@@ -1056,15 +1074,16 @@ function drawArchMobile(t, P) {
   const si = Math.min(sim.steps.length - 1, Math.floor(t / stepDur))
   const cur = sim.steps[si]
   const frac = clamp(t / stepDur - si, 0, 1)
-  const cell = 9
-  const memCell = 6
+  const cell = Math.max(8, Math.min(13, Math.round(W / 40)))
+  const memCell = Math.max(5, Math.min(7, Math.round(W / 55)))
   const l1w = 4 * (cell + 2) - 2
   const l1h = 2 * (cell + 2) - 2
   const l2w = 8 * (cell + 2) - 2
   const memW = 16 * (memCell + 1) - 1
   const memH = 4 * (memCell + 1) - 1
-  const gy = 152
-  const l1x = 10
+  const gy = Math.min(152, H - memH - 76)
+  const stripW = l1w + l2w + memW + 32
+  const l1x = Math.max(10, (W - stripW) / 2)
   const l2x = l1x + l1w + 16
   const memx = l2x + l2w + 16
   const flashL1 = cur.l1.indexOf(cur.blk)
@@ -1123,15 +1142,15 @@ function drawArchMobile(t, P) {
   const msg = cur.hit1 ? 'L1 命中' : cur.hit2 ? 'L1 MISS → L2 命中' : 'L1/L2 MISS → 访存'
   ctx.font = font(10)
   ctx.fillStyle = rgba(P.ink, 0.92)
-  ctx.fillText(`访问 块 ${String(cur.blk).padStart(2, '0')}`, 10, gy + memH + 22)
+  ctx.fillText(`访问 块 ${String(cur.blk).padStart(2, '0')}`, l1x, gy + memH + 22)
   ctx.fillStyle = cur.hit1 ? rgba(P.good, 1) : rgba(P.crit, 1)
-  ctx.fillText(msg, 10, gy + memH + 40)
+  ctx.fillText(msg, l1x, gy + memH + 40)
   ctx.fillStyle = rgba(P.dim, 0.95)
-  ctx.fillText(`L1 命中率 ${rate}%`, 170, gy + memH + 40)
+  ctx.fillText(`L1 命中率 ${rate}%`, l1x + 160, gy + memH + 40)
 }
 
 function drawArch(t, P) {
-  if (W < 560) return drawArchMobile(t, P)
+  if (W < 780) return drawArchMobile(t, P)
   const midY = H * 0.44
   const imem = { x: 56, y: midY - 62, w: 150, h: 124 }
   const dmem = { x: W - 206, y: midY - 62, w: 150, h: 124 }
