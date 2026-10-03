@@ -50,12 +50,16 @@ async function copy() {
   margin: 26px auto 44px;
   padding: 0 24px;
 }
+.jc-wrap :deep(.hf-vf) {
+  display: none;
+}
 .jc-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 20px 40px;
+  padding: 4px 14px 12px;
 }
 .jc-text h2 {
   margin: 0 0 8px;
@@ -73,7 +77,7 @@ async function copy() {
 .jc-qq {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 .jc-tag {
@@ -82,6 +86,7 @@ async function copy() {
 }
 .jc-number {
   font-family: ui-monospace, 'JetBrains Mono', 'Noto Sans Mono', monospace;
+  flex-shrink: 0;
   font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.12em;
