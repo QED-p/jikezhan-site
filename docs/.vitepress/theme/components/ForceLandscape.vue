@@ -39,7 +39,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="fl-wrap" :class="{ 'fl-on': active }">
-    <slot />
+    <div class="fl-stage">
+      <slot />
+    </div>
   </div>
   <div v-if="active" class="fl-hint">
     <span>已强制横屏 · 请将手机旋转 90° 查看</span>
@@ -56,10 +58,23 @@ html.fl-lock body {
 
 <style scoped>
 .fl-wrap {
+  display: block;
+}
+.fl-stage {
   container-type: inline-size;
 }
 .fl-wrap.fl-on {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--vp-c-bg);
+  z-index: 100;
+}
+.fl-wrap.fl-on .fl-stage {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100vh;
@@ -71,10 +86,10 @@ html.fl-lock body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   background: var(--vp-c-bg);
-  z-index: 100;
+  will-change: transform;
 }
 @supports (height: 100dvw) {
-  .fl-wrap.fl-on {
+  .fl-wrap.fl-on .fl-stage {
     width: 100dvh;
     height: 100dvw;
   }

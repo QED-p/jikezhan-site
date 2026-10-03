@@ -16,6 +16,7 @@ let captured = false
 
 function onDown(e) {
   if (e.button !== 0) return
+  if (e.pointerType === 'touch') return
   drag = { x: e.clientX, y: e.clientY, sl: panRef.value.scrollLeft, st: panRef.value.scrollTop }
   moved = false
   captured = false
