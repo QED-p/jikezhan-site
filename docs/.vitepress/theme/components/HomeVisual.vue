@@ -15,7 +15,7 @@ const SCENES = [
   { key: 'arch', label: '体系结构 · 哈佛架构与存储层次' },
   { key: 'mix', label: '概率 · 信息 · 离散' }
 ]
-const DUR = [4.6, 4.2, 4.6, 4.2, 4.4, 4.2, 5.2, 4.2]
+const DUR = [4.6, 6.8, 4.6, 4.2, 4.4, 4.2, 5.2, 4.2]
 const FADE = 0.4
 const FLASH = 0.32
 
@@ -289,9 +289,9 @@ function drawLA(t, P) {
   ctx.fillText(`det ${det.toFixed(2)}   tr ${tr.toFixed(2)}   A·v → Av`, W - 250, 22)
 }
 
-/* ---------- 幕 2：矩阵分析（正交化，真三维） ---------- */
+/* ---------- 幕 2：矩阵分析（正交化，真三维，三向量） ---------- */
 function drawGS(t, P) {
-  const cam = camera3(-0.55 + 0.4 * Math.sin(t * 0.5), 0.62 + 0.06 * Math.sin(t * 0.4), 5.6, 560)
+  const cam = camera3(-0.55 + 0.4 * Math.sin(t * 0.5), 0.62 + 0.06 * Math.sin(t * 0.4), 6.2, 560)
   const pr = (p) => project3({ x: p[0], y: p[1], z: p[2] }, cam)
   const seg = (p, q, color, width = 1.4, dash = null) => {
     const a = pr(p)
@@ -341,18 +341,29 @@ function drawGS(t, P) {
   const O = [0, 0, 0]
   const dt3 = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
   const n3 = (v) => Math.hypot(v[0], v[1], v[2])
-  const a1 = [1.7, 0.3, 0.65]
-  const a2 = [0.45, 1.55, -0.3]
+  const sc = (v, k) => v.map((x) => x * k)
+  const mi = (u, v) => u.map((x, i) => x - v[i])
+  const a1 = [1.7, 0.3, 0.55]
+  const a2 = [0.45, 1.55, -0.35]
+  const a3 = [-0.85, 0.7, 1.45]
   const n1 = n3(a1)
-  const e1 = a1.map((x) => x / n1)
+  const e1 = sc(a1, 1 / n1)
   const c2 = dt3(a2, e1)
-  const b2 = a2.map((x, i) => x - c2 * e1[i])
+  const b2 = mi(a2, sc(e1, c2))
   const n2 = n3(b2)
-  const e2 = b2.map((x) => x / n2)
+  const e2 = sc(b2, 1 / n2)
+  const c31 = dt3(a3, e1)
+  const c32 = dt3(a3, e2)
+  const foot3 = a3.map((_, i) => c31 * e1[i] + c32 * e2[i])
+  const b3 = mi(a3, foot3)
+  const n3b = n3(b3)
+  const e3 = sc(b3, 1 / n3b)
   const ph = t / DUR[1]
-  const p1 = smooth(clamp((ph - 0.06) / 0.22, 0, 1))
-  const p2 = smooth(clamp((ph - 0.3) / 0.3, 0, 1))
-  const p3 = smooth(clamp((ph - 0.62) / 0.24, 0, 1))
+  const p1 = smooth(clamp((ph - 0.04) / 0.16, 0, 1))
+  const p2 = smooth(clamp((ph - 0.22) / 0.18, 0, 1))
+  const p3 = smooth(clamp((ph - 0.42) / 0.14, 0, 1))
+  const p4 = smooth(clamp((ph - 0.58) / 0.18, 0, 1))
+  const p5 = smooth(clamp((ph - 0.8) / 0.15, 0, 1))
   const o = pr(O)
   if (o) {
     const pulse = 7 + 2.5 * Math.sin(t * 6)
@@ -364,11 +375,12 @@ function drawGS(t, P) {
     ctx.arc(o.x, o.y, pulse * 2.4, 0, Math.PI * 2)
     ctx.fill()
   }
-  const mid = (v, k) => v.map((x) => x * k)
   arr(O, a1, rgba(P.ink, 0.65 - 0.35 * p1), 1.7, 5)
-  lab(mid(a1, 0.62), 'a₁', P.ink, -36, 8)
+  lab(mi(a1, sc(a1, 0.38)), 'a₁', P.ink, -36, 8)
   arr(O, a2, rgba(P.ink, 0.65), 1.7, 5)
   lab(a2, 'a₂', P.ink, 14, -12)
+  arr(O, a3, rgba(P.ink, 0.65 - 0.35 * p4), 1.7, 5)
+  lab(a3, 'a₃', P.ink, 14, -12)
   if (p1 > 0.01) {
     ctx.globalAlpha = p1
     arr(O, e1, rgba(P.accent, 0.95), 2, 6)
@@ -379,11 +391,10 @@ function drawGS(t, P) {
   }
   if (p2 > 0.01) {
     ctx.globalAlpha = p2
-    const foot = e1.map((x) => x * c2)
-    seg(O, foot, rgba(P.warn, 0.7), 1.4, [5, 4])
-    seg(a2, foot, rgba(P.warn, 0.5), 1, [3, 3])
+    const foot = sc(e1, c2)
+    seg(O, foot, rgba(P.warn, 0.6), 1.4, [5, 4])
+    seg(a2, foot, rgba(P.warn, 0.45), 1, [3, 3])
     arr(O, b2, rgba(P.warn, 0.9 - 0.5 * p3), 1.8, 5)
-    lab(mid(b2, 0.6), 'b₂', P.warn, 16, 20)
     const fp = pr(foot)
     if (fp) {
       ctx.beginPath()
@@ -391,6 +402,7 @@ function drawGS(t, P) {
       ctx.fillStyle = rgba(P.warn, 0.8)
       ctx.fill()
     }
+    lab(mi(b2, sc(b2, 0.4)), 'b₂', P.warn, 16, 20)
     ctx.globalAlpha = 1
   }
   if (p3 > 0.01) {
@@ -400,16 +412,50 @@ function drawGS(t, P) {
     if (g2) glowDot(g2.x, g2.y, 2.2, P.good)
     lab(e2, 'e₂', P.good, 10, -12)
     const r = 0.24
-    const r1 = e1.map((x) => x * r)
+    const r1 = sc(e1, r)
     const r2 = e1.map((x, i) => (x + e2[i]) * r)
-    const r3 = e2.map((x) => x * r)
+    const r3 = sc(e2, r)
     seg(r1, r2, rgba(P.hot, 0.8), 1.2)
     seg(r3, r2, rgba(P.hot, 0.8), 1.2)
     ctx.globalAlpha = 1
   }
+  if (p4 > 0.01) {
+    ctx.globalAlpha = p4
+    const L = 1.5
+    const quad = [
+      e1.map((x, i) => (x + e2[i]) * L),
+      e1.map((x, i) => (x - e2[i]) * L),
+      e1.map((x, i) => -(x + e2[i]) * L),
+      e1.map((x, i) => -x * L + e2[i] * L)
+    ]
+      .map(pr)
+      .filter(Boolean)
+      .map((p) => [p.x, p.y])
+    if (quad.length === 4) poly(quad, rgba(P.accent, 0.06), rgba(P.accent, 0.28), 1)
+    seg(O, foot3, rgba(P.warn, 0.55), 1.4, [5, 4])
+    seg(a3, foot3, rgba(P.warn, 0.45), 1, [3, 3])
+    const f3 = pr(foot3)
+    if (f3) {
+      ctx.beginPath()
+      ctx.arc(f3.x, f3.y, 3, 0, Math.PI * 2)
+      ctx.fillStyle = rgba(P.warn, 0.8)
+      ctx.fill()
+    }
+    arr(O, b3, rgba(P.warn, 0.9 - 0.5 * p5), 1.8, 5)
+    lab(mi(b3, sc(b3, 0.4)), 'b₃', P.warn, 16, 20)
+    ctx.globalAlpha = 1
+  }
+  if (p5 > 0.01) {
+    ctx.globalAlpha = p5
+    arr(O, e3, rgba(P.hot, 0.95), 2, 6)
+    const g3 = pr(e3)
+    if (g3) glowDot(g3.x, g3.y, 2.4, P.hot)
+    lab(e3, 'e₃', P.hot, 10, -12)
+    ctx.globalAlpha = 1
+  }
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(`r₁₁ ${n1.toFixed(2)}   r₂₂ ${n2.toFixed(2)}   A = QR`, W - 260, 22)
+  ctx.fillText(`r₁₁ ${n1.toFixed(2)}   r₂₂ ${n2.toFixed(2)}   r₃₃ ${n3b.toFixed(2)}   A = QR`, W - 340, 22)
 }
 
 /* ---------- 幕 3：矢量分析（场 + 梯度 inset） ---------- */
