@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { decodeWord } from '../../labs/rv/isa.js'
 
 const props = defineProps({
   frame: { type: Object, default: null },
@@ -87,7 +88,8 @@ const barState = (which) => {
   if (!fr) return { cls: 'idle', label: '' }
   const l = fr.latches[which]
   if (!l || !l.valid) return { cls: 'bub', label: '气泡' }
-  return { cls: which === 'ifid' && fr.signals.flush ? 'flush' : 'ok', label: l.name || '?' }
+  const nm = l.name || (l.instr !== undefined ? decodeWord(l.instr).name : null) || '?'
+  return { cls: which === 'ifid' && fr.signals.flush ? 'flush' : 'ok', label: nm }
 }
 
 const ex = computed(() => (f.value ? f.value.ex : null))
@@ -180,6 +182,17 @@ const hazardText = computed(() => {
         <text :x="b.x + 7.5" y="560" class="bar-sub" text-anchor="middle">{{ barState(b.k).label }}</text>
       </g>
 
+      <!-- 底层走线：转发旁路与写回反馈（画在部件之下，只从间隙露出） -->
+      <path
+        d="M 862 240 C 790 250 740 228 652 220"
+        class="bypass" :class="{ on: ex && ex.fwdA === 2 || ex && ex.fwdB === 2 }"
+      />
+      <path
+        d="M 1132 250 C 1000 300 760 350 652 312"
+        class="bypass" :class="{ on: ex && ex.fwdA === 1 || ex && ex.fwdB === 1 }"
+      />
+      <path d="M 1358 336 L 1358 736 L 545 736 L 545 446" class="wbpath" :class="{ on: !!wb }" />
+
       <!-- ============ IF ============ -->
       <g class="clickable" data-part="pc" @click="selectPart('pc')">
         <rect x="40" y="170" width="92" height="76" rx="6" class="box" :class="{ on: stageActive('if'), sel: selected === 'pc' }" />
@@ -218,11 +231,11 @@ const hazardText = computed(() => {
       <g>
         <g v-for="(L, i) in LAMPS" :key="L.key">
           <circle
-            :cx="302 + (i % 3) * 46" :cy="272 + Math.floor(i / 3) * 24" r="5"
+            :cx="302 + (i % 3) * 60" :cy="272 + Math.floor(i / 3) * 24" r="5"
             class="lamp" :class="{ on: lamState(L.key) }"
             @click="selectPart('cu')"
           />
-          <text :x="312 + (i % 3) * 46" :y="276 + Math.floor(i / 3) * 24" class="lamp-label">{{ L.label }}</text>
+          <text :x="312 + (i % 3) * 60" :y="276 + Math.floor(i / 3) * 24" class="lamp-label">{{ L.label }}</text>
         </g>
       </g>
       <g class="clickable" data-part="rf" @click="selectPart('rf')">
@@ -278,16 +291,6 @@ const hazardText = computed(() => {
         <text x="728" y="490" class="bv2" :class="{ acc: ex && ex.fwdA === 1 }">MEM/WB → A {{ ex && ex.fwdA === 1 ? '●' : '○' }}</text>
         <text x="728" y="510" class="bv2" :class="{ acc: ex && ex.fwdB === 1 }">MEM/WB → B {{ ex && ex.fwdB === 1 ? '●' : '○' }}</text>
       </g>
-      <!-- 转发旁路 -->
-      <path
-        d="M 862 240 C 790 250 740 228 652 220"
-        class="bypass" :class="{ on: ex && ex.fwdA === 2 || ex && ex.fwdB === 2 }"
-      />
-      <path
-        d="M 1132 250 C 1000 300 760 350 652 312"
-        class="bypass" :class="{ on: ex && ex.fwdA === 1 || ex && ex.fwdB === 1 }"
-      />
-
       <!-- ============ MEM ============ -->
       <line x1="850" y1="255" x2="898" y2="255" class="wire" :class="{ on: stageActive('mem') }" />
       <g class="clickable" data-part="dmem" @click="selectPart('dmem')">
@@ -301,7 +304,7 @@ const hazardText = computed(() => {
           <text v-else x="910" y="294" class="bs">无读</text>
         </template>
         <text v-else x="910" y="262" class="bs">（本拍无访存）</text>
-        <text x="910" y="340" class="bs">64 字 · 基址 0x100 · 完整内容见「存储与寄存器」页</text>
+        <text x="910" y="340" class="bs">64 字 · 基址 0x100</text>
       </g>
       <line x1="1006" y1="376" x2="1006" y2="392" class="wire" />
       <line x1="1110" y1="290" x2="1132" y2="290" class="wire" :class="{ on: stageActive('mem') }" />
@@ -323,19 +326,13 @@ const hazardText = computed(() => {
         </template>
         <text v-else x="1278" y="302" class="bs">本拍无写回</text>
       </g>
-      <!-- 写回反馈线 -->
-      <path d="M 1358 336 L 1358 640 L 415 640 L 415 452" class="wbpath" :class="{ on: !!wb }" />
-
       <!-- ============ 冒险单元 ============ -->
       <g class="clickable" data-part="hazard" @click="selectPart('hazard')">
         <rect x="560" y="606" width="320" height="104" rx="8" class="box hazard" :class="{ on: sig.stall || sig.flush, sel: selected === 'hazard' }" />
         <text x="574" y="630" class="bt">冒险检测单元</text>
-        <text x="574" y="654" class="bv2" :class="{ crit: hazardText && hazardText.loadUse }">
-          load-use：ID/EX.MemRead = {{ hazardText && hazardText.loadUse ? 1 : 0 }}
-          <tspan v-if="hazardText && hazardText.loadUse">，rd = x{{ hazardText.rd }}，ID.rs1 = x{{ hazardText.rs1 }} / rs2 = x{{ hazardText.rs2 }}</tspan>
-        </text>
-        <text x="574" y="676" class="bv2" :class="{ warn: sig.stall }">→ 停顿（PC 保持 / IF/ID 保持 / 插入气泡）：{{ sig.stall ? '1' : '0' }}</text>
-        <text x="574" y="696" class="bv2" :class="{ crit: sig.flush }">→ 冲刷（squash 两拍）：{{ sig.flush ? '1' : '0' }}</text>
+        <text x="574" y="652" class="bv2" :class="{ crit: hazardText && hazardText.loadUse }">load-use：ID/EX.MemRead = {{ hazardText && hazardText.loadUse ? 1 : 0 }}</text>
+        <text x="574" y="672" class="bv2">ID/EX.rd = x{{ hazardText ? hazardText.rd : '·' }}   ID.rs1 = x{{ hazardText ? hazardText.rs1 : '·' }} / rs2 = x{{ hazardText ? hazardText.rs2 : '·' }}</text>
+        <text x="574" y="694" class="bv2"><tspan :class="{ warn: sig.stall }">→ 停顿 {{ sig.stall ? 1 : 0 }}（PC/IF-ID 保持 · 插气泡）</tspan> · <tspan :class="{ crit: sig.flush }">→ 冲刷 {{ sig.flush ? 1 : 0 }}</tspan></text>
       </g>
       <path d="M 560 646 L 262 646 L 262 545" class="ctrl-line" :class="{ on: sig.stall }" />
       <path d="M 580 606 L 580 545" class="ctrl-line crit" :class="{ on: sig.flush }" />
@@ -353,7 +350,7 @@ const hazardText = computed(() => {
       </g>
     </svg>
     </div>
-    <p class="dp-tip">按住空白处拖动可平移（也可滚轮/滚动条）· 点击部件看内部实现</p>
+    <p class="dp-tip">按住空白处拖动可平移（也可滚轮/滚动条）· 点击部件看内部实现 · 完整内存/寄存器见「存储与寄存器」页</p>
   </div>
 </template>
 
@@ -408,7 +405,7 @@ const hazardText = computed(() => {
   fill: var(--hud-ink);
 }
 .box {
-  fill: rgba(11, 9, 22, 0.72);
+  fill: rgba(11, 9, 22, 0.9);
   stroke: var(--hud-faint);
   stroke-width: 1;
   transition: stroke 0.15s, fill 0.15s;
