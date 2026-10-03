@@ -255,4 +255,20 @@ const STAGE_NAME = { if: 'IF', id: 'ID', ex: 'EX', mem: 'MEM', wb: 'WB', stall: 
 .tl-row:nth-child(odd) .tl-instr-col {
   background: rgba(11, 9, 22, 0.85);
 }
+@media (max-width: 720px) {
+  .tl-instr-col {
+    width: 168px;
+    flex: 0 0 168px;
+    font-size: 10px;
+  }
+  .tl-scroll {
+    max-height: 360px;
+  }
+  .tl-head {
+    gap: 8px 12px;
+  }
+  .tl-legend {
+    margin-left: 0;
+  }
+}
 </style>

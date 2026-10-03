@@ -17,7 +17,13 @@ defineProps({
 .readouts {
   display: flex;
   align-items: center;
-  gap: 30px;
+  flex-wrap: wrap;
+  gap: 10px 30px;
+}
+@media (max-width: 640px) {
+  .readouts {
+    gap: 8px 16px;
+  }
 }
 .ro {
   display: flex;

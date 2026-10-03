@@ -25,4 +25,9 @@ import RvPipeline from '../.vitepress/theme/components/RvPipeline.vue'
   font-size: 13.5px;
   color: var(--vp-c-text-3);
 }
+@media (max-width: 720px) {
+  .lab-page {
+    padding: 12px 10px 60px;
+  }
+}
 </style>

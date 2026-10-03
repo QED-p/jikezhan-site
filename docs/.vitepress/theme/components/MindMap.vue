@@ -85,6 +85,7 @@ const activeEdges = computed(() => {
 </script>
 
 <template>
+  <div class="mm-scroll">
   <div
     class="mindmap"
     :style="{ width: layout.width + 'px', height: layout.height + 'px' }"
@@ -123,9 +124,14 @@ const activeEdges = computed(() => {
       {{ n.label }}
     </button>
   </div>
+  </div>
 </template>
 
 <style scoped>
+.mm-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
 .mindmap {
   position: relative;
 }

@@ -286,7 +286,11 @@ function drawLA(t, P) {
     }
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
-  ctx.fillText(`det ${det.toFixed(2)}   tr ${tr.toFixed(2)}   A·v → Av`, W - 250, 22)
+  if (W >= 560) {
+    ctx.fillText(`det ${det.toFixed(2)}   tr ${tr.toFixed(2)}   A·v → Av`, W - 250, 22)
+  } else {
+    ctx.fillText(`det ${det.toFixed(2)}   tr ${tr.toFixed(2)}`, 158, 26)
+  }
 }
 
 /* ---------- 幕 2：矩阵分析（正交化，真三维，三向量） ---------- */
@@ -455,7 +459,11 @@ function drawGS(t, P) {
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(`r₁₁ ${n1.toFixed(2)}   r₂₂ ${n2.toFixed(2)}   r₃₃ ${n3b.toFixed(2)}   A = QR`, W - 340, 22)
+  if (W >= 560) {
+    ctx.fillText(`r₁₁ ${n1.toFixed(2)}   r₂₂ ${n2.toFixed(2)}   r₃₃ ${n3b.toFixed(2)}   A = QR`, W - 340, 22)
+  } else {
+    ctx.fillText(`r₁₁ ${n1.toFixed(2)}  r₂₂ ${n2.toFixed(2)}  A = QR`, 14, 26)
+  }
 }
 
 /* ---------- 幕 3：矢量分析（场 + 梯度 inset） ---------- */
@@ -543,6 +551,12 @@ function drawVA(t, P) {
   ctx.stroke()
   arrow(X(px), Y(py), X(px + fx * 0.28), Y(py + fy * 0.28), rgba(P.hot, 0.9), 1.5, 5)
   glowDot(X(px), Y(py), 3, P.hot)
+  if (W < 560) {
+    ctx.fillStyle = rgba(P.dim, 0.95)
+    ctx.font = font(11)
+    ctx.fillText(`div F = 0.60   curl F = ${curl.toFixed(2)}`, 14, 26)
+    return
+  }
   const ix = 26
   const iy = 30
   const iw = 152
@@ -672,11 +686,15 @@ function drawGD(t, P) {
   if (pC) glowDot(pC.x, pC.y, 3.6, P.hot)
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText(
-    `lr 0.10   step ${shown}/46   f = ${mf.f(cur[0], cur[1]).toFixed(2)}   |∇f| = ${gn.toFixed(2)}`,
-    W - 430,
-    22
-  )
+  if (W >= 560) {
+    ctx.fillText(
+      `lr 0.10   step ${shown}/46   f = ${mf.f(cur[0], cur[1]).toFixed(2)}   |∇f| = ${gn.toFixed(2)}`,
+      W - 430,
+      22
+    )
+  } else {
+    ctx.fillText(`step ${shown}/46   |∇f| = ${gn.toFixed(2)}`, 14, 26)
+  }
 }
 /* ---------- 幕 5：CNN（扁平 HUD） ---------- */
 function drawCNN(t, P) {
@@ -704,7 +722,9 @@ function drawCNN(t, P) {
   ctx.strokeRect(ix + kc * cell - 1, iy + kr * cell - 1, cell * 3 + 1, cell * 3 + 1)
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.fillText('输入 7×7', ix, iy - 10)
-  const kx = ix + n * cell + 34
+  const gap1 = W < 560 ? 24 : 34
+  const gap2 = W < 560 ? 28 : 40
+  const kx = ix + n * cell + gap1
   ctx.fillText('卷积核 3×3', kx, iy - 10)
   const kk = [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]
   for (let i = 0; i < 3; i++) {
@@ -720,7 +740,7 @@ function drawCNN(t, P) {
       ctx.fillText(String(wv), x + cell * 0.32, y + cell * 0.68)
     }
   }
-  const fx = kx + 3 * cell * 1.2 + 40
+  const fx = kx + 3 * cell * 1.2 + gap2
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.fillText('特征图 5×5', fx, iy - 10)
   const resp = (r, c) => {
@@ -747,11 +767,86 @@ function drawCNN(t, P) {
     }
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
-  ctx.fillText('conv 3×3 · stride 1 · ReLU', W - 250, 22)
+  ctx.fillText('conv 3×3 · stride 1 · ReLU', W >= 560 ? W - 250 : 14, 26)
 }
 
 /* ---------- 幕 6：Transformer（全链路 + 参数方框，扁平 HUD） ---------- */
+/* Transformer：移动端紧凑布局（token 行 + 注意力热力图 + 输出条） */
+function drawTFMobile(t, P) {
+  const TOKENS = ['极', '客', '栈', '是', '社', '团']
+  const n = 6
+  const qi = Math.floor(t / 1.05) % n
+  const w = []
+  for (let i = 0; i < n; i++) {
+    w.push([])
+    let sum = 0
+    for (let j = 0; j < n; j++) {
+      const sc = 1.3 * Math.sin(1.1 * i + 0.9 * j + 0.9 * t) + (i === j ? 0.9 : 0)
+      w[i].push(Math.exp(sc))
+      sum += w[i][j]
+    }
+    for (let j = 0; j < n; j++) w[i][j] /= sum
+  }
+  ctx.font = font(11)
+  const cell = 22
+  const ty = 44
+  const tx0 = (W - n * cell) / 2 + 4
+  for (let j = 0; j < n; j++) {
+    const x = tx0 + j * cell
+    ctx.fillStyle = rgba(P.bg, 1)
+    ctx.fillRect(x, ty, cell * 0.86, cell * 0.86)
+    ctx.strokeStyle = rgba(j === qi ? P.accent : P.faint, 1.2)
+    ctx.lineWidth = j === qi ? 1.6 : 1
+    ctx.strokeRect(x, ty, cell * 0.86, cell * 0.86)
+    ctx.fillStyle = rgba(j === qi ? P.accent : P.ink, 1)
+    ctx.fillText(TOKENS[j], x + cell * 0.26, ty + cell * 0.6)
+  }
+  const cell2 = 14
+  const hy = 86
+  const hx = 16
+  const rowY = hy + qi * cell2 + cell2 * 0.43
+  const qx = tx0 + qi * cell + cell * 0.43
+  ctx.strokeStyle = rgba(P.accent, 0.45)
+  ctx.lineWidth = 1.2
+  ctx.setLineDash([3, 3])
+  ctx.beginPath()
+  ctx.moveTo(qx, ty + cell * 0.86)
+  ctx.lineTo(qx, rowY)
+  ctx.lineTo(hx + n * cell2 + 2, rowY)
+  ctx.stroke()
+  ctx.setLineDash([])
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const x = hx + j * cell2
+      const y = hy + i * cell2
+      ctx.fillStyle = rgba(P.accent, 0.06 + Math.pow(w[i][j], 1.3) * 0.85)
+      ctx.fillRect(x, y, cell2 * 0.86, cell2 * 0.86)
+      ctx.strokeStyle = rgba(i === qi ? P.accent : P.faint, i === qi ? 0.9 : 0.5)
+      ctx.lineWidth = 1
+      ctx.strokeRect(x, y, cell2 * 0.86, cell2 * 0.86)
+    }
+  }
+  ctx.font = font(9)
+  ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText('注意力 softmax(QKᵀ/√d)', hx, hy - 6)
+  ctx.font = font(10)
+  const ox = 142
+  const oy = 96
+  const names = ['客', '栈', '是', '的']
+  const bars = [0.55, 0.24, 0.13, 0.08]
+  ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText('输出', ox, hy - 6)
+  for (let i = 0; i < 4; i++) {
+    const bw = bars[i] * (W - ox - 44)
+    ctx.fillStyle = rgba(i === 0 ? P.accent : P.dim, i === 0 ? 0.85 : 0.5)
+    ctx.fillRect(ox, oy + i * 26, bw, 16)
+    ctx.fillStyle = rgba(P.ink, 0.9)
+    ctx.fillText(names[i], ox + bw + 5, oy + 12 + i * 26)
+  }
+}
+
 function drawTF(t, P) {
+  if (W < 560) return drawTFMobile(t, P)
   const stageNames = ['Token', 'Embedding', 'Q / K / V', 'Attention', 'FFN', 'Output']
   const nStage = stageNames.length
   const bw = Math.min(168, (W - 80) / nStage - 18)
@@ -856,7 +951,11 @@ function drawTF(t, P) {
   }
   ctx.fillStyle = rgba(P.dim, 0.95)
   ctx.font = font(11)
-  ctx.fillText('前向：token → xW + b → softmax → 下一个 token', W - 430, 22)
+  ctx.fillText(
+    W >= 560 ? '前向：token → xW + b → softmax → 下一个 token' : 'token → xW+b → softmax → 下个 token',
+    W >= 560 ? W - 430 : 14,
+    26
+  )
 }
 /* ---------- 幕 7：体系结构（哈佛架构图 + 存储层次，扁平 HUD） ---------- */
 function buildCacheSim() {
@@ -896,7 +995,143 @@ function buildCacheSim() {
   return { steps }
 }
 
+/* 移动端：哈佛架构 + 存储层次的紧凑布局 */
+function drawArchMobile(t, P) {
+  ctx.lineWidth = 1.2
+  ctx.strokeStyle = rgba(P.faint, 1)
+  ctx.fillStyle = rgba(P.bg, 1)
+  const bw = (W - 20 - 52) / 3
+  const imem = { x: 10, y: 36, w: bw, h: 72 }
+  const cpu = { x: 10 + bw + 26, y: 28, w: bw, h: 88 }
+  const dmem = { x: 10 + 2 * (bw + 26), y: 36, w: bw, h: 72 }
+  for (const b of [imem, cpu, dmem]) {
+    ctx.fillRect(b.x, b.y, b.w, b.h)
+    ctx.strokeRect(b.x, b.y, b.w, b.h)
+  }
+  ctx.font = font(10)
+  ctx.fillStyle = rgba(P.dim, 1)
+  ctx.fillText('IMEM', imem.x + 6, imem.y + 16)
+  ctx.fillText('指令存储', imem.x + 6, imem.y + 32)
+  ctx.fillStyle = rgba(P.ink, 0.9)
+  ctx.fillText('CPU', cpu.x + 6, cpu.y + 16)
+  ctx.fillText('控制·ALU', cpu.x + 6, cpu.y + 32)
+  ctx.fillStyle = rgba(P.dim, 1)
+  ctx.fillText('DMEM', dmem.x + 6, dmem.y + 16)
+  ctx.fillText('数据存储', dmem.x + 6, dmem.y + 32)
+  const y1 = 52
+  const y2 = 76
+  const y3 = 98
+  line(imem.x + imem.w, y1, cpu.x - 2, y1, rgba(P.accent, 0.85), 1.4)
+  arrow(imem.x + imem.w, y1, cpu.x - 2, y1, rgba(P.accent, 0.85), 1.4, 5)
+  line(cpu.x + cpu.w, y2, dmem.x - 2, y2, rgba(P.good, 0.85), 1.4)
+  arrow(cpu.x + cpu.w, y2, dmem.x - 2, y2, rgba(P.good, 0.85), 1.4, 5)
+  line(dmem.x, y3, cpu.x + cpu.w + 2, y3, rgba(P.warn, 0.85), 1.4)
+  arrow(dmem.x, y3, cpu.x + cpu.w + 2, y3, rgba(P.warn, 0.85), 1.4, 5)
+  const tags = ['add', 'ld', 'bne', 'lw']
+  const ipos = (t * 0.85) % 1
+  const ix = lerp(imem.x + imem.w, cpu.x, ipos)
+  ctx.fillStyle = rgba(P.accent, 0.95)
+  ctx.fillRect(ix - 12, y1 - 8, 24, 15)
+  ctx.fillStyle = rgba(P.bg, 1)
+  ctx.font = font(8)
+  ctx.fillText(tags[Math.floor(t / 0.7) % tags.length], ix - 9, y1 + 3)
+  for (let k = 0; k < 2; k++) {
+    const u = (t * 0.5 + k * 0.5) % 1
+    const wx = lerp(cpu.x + cpu.w, dmem.x, u)
+    ctx.fillStyle = rgba(P.good, 0.9)
+    ctx.fillRect(wx - 10, y2 - 7, 20, 14)
+    ctx.fillStyle = rgba(P.bg, 1)
+    ctx.font = font(8)
+    ctx.fillText(['42', '7'][k], wx - 7, y2 + 3)
+    const v = (t * 0.42 + k * 0.53) % 1
+    const rx = lerp(dmem.x, cpu.x + cpu.w, v)
+    ctx.fillStyle = rgba(P.warn, 0.9)
+    ctx.fillRect(rx - 10, y3 - 7, 20, 14)
+    ctx.fillStyle = rgba(P.bg, 1)
+    ctx.fillText(['13', '8'][k], rx - 6, y3 + 3)
+  }
+  if (!state.arch) state.arch = buildCacheSim()
+  const sim = state.arch
+  const stepDur = 0.18
+  const si = Math.min(sim.steps.length - 1, Math.floor(t / stepDur))
+  const cur = sim.steps[si]
+  const frac = clamp(t / stepDur - si, 0, 1)
+  const cell = 9
+  const memCell = 6
+  const l1w = 4 * (cell + 2) - 2
+  const l1h = 2 * (cell + 2) - 2
+  const l2w = 8 * (cell + 2) - 2
+  const memW = 16 * (memCell + 1) - 1
+  const memH = 4 * (memCell + 1) - 1
+  const gy = 152
+  const l1x = 10
+  const l2x = l1x + l1w + 16
+  const memx = l2x + l2w + 16
+  const flashL1 = cur.l1.indexOf(cur.blk)
+  const flashL2 = cur.l2.indexOf(cur.blk)
+  const flashCol = cur.hit1 ? P.good : P.crit
+  const slots = (gx, cols, arr, flashIdx) => {
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < cols; j++) {
+        const idx = i * cols + j
+        const x = gx + j * (cell + 2)
+        const y = gy + i * (cell + 2)
+        const occupied = arr[idx] >= 0
+        let fill
+        let edge
+        if (idx === flashIdx && frac < 0.6) {
+          fill = rgba(flashCol, 0.95)
+          edge = rgba(flashCol, 1)
+        } else if (occupied) {
+          fill = rgba(P.accent, 0.5)
+          edge = rgba(P.accent, 0.85)
+        } else {
+          fill = rgba(P.bg, 1)
+          edge = rgba(P.faint, 0.9)
+        }
+        ctx.fillStyle = fill
+        ctx.fillRect(x, y, cell, cell)
+        ctx.strokeStyle = edge
+        ctx.lineWidth = 1
+        ctx.strokeRect(x, y, cell, cell)
+      }
+    }
+  }
+  ctx.font = font(9)
+  ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText('L1', l1x, gy - 5)
+  ctx.fillText('L2', l2x, gy - 5)
+  ctx.fillText('主存', memx, gy - 5)
+  slots(l1x, 4, cur.l1, flashL1)
+  slots(l2x, 8, cur.l2, cur.hit2 || !cur.hit1 ? flashL2 : -1)
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 16; j++) {
+      const idx = i * 16 + j
+      const x = memx + j * (memCell + 1)
+      const y = gy + i * (memCell + 1)
+      const isCur = idx === cur.blk
+      ctx.fillStyle = isCur && frac < 0.6 ? rgba(P.crit, 0.95) : rgba(P.dim, 0.3)
+      ctx.fillRect(x, y, memCell, memCell)
+      ctx.strokeStyle = isCur ? rgba(P.crit, 1) : rgba(P.faint, 0.8)
+      ctx.lineWidth = 1
+      ctx.strokeRect(x, y, memCell, memCell)
+    }
+  }
+  const hits = cur.hits
+  const misses = cur.misses
+  const rate = hits + misses ? Math.round((hits / (hits + misses)) * 100) : 0
+  const msg = cur.hit1 ? 'L1 命中' : cur.hit2 ? 'L1 MISS → L2 命中' : 'L1/L2 MISS → 访存'
+  ctx.font = font(10)
+  ctx.fillStyle = rgba(P.ink, 0.92)
+  ctx.fillText(`访问 块 ${String(cur.blk).padStart(2, '0')}`, 10, gy + memH + 22)
+  ctx.fillStyle = cur.hit1 ? rgba(P.good, 1) : rgba(P.crit, 1)
+  ctx.fillText(msg, 10, gy + memH + 40)
+  ctx.fillStyle = rgba(P.dim, 0.95)
+  ctx.fillText(`L1 命中率 ${rate}%`, 170, gy + memH + 40)
+}
+
 function drawArch(t, P) {
+  if (W < 560) return drawArchMobile(t, P)
   const midY = H * 0.44
   const imem = { x: 56, y: midY - 62, w: 150, h: 124 }
   const dmem = { x: W - 206, y: midY - 62, w: 150, h: 124 }
@@ -1148,9 +1383,10 @@ function drawMix(t, P) {
   ctx.font = font(10)
   ctx.fillText('正态采样', 12, 22)
   const colW = pw * 0.14
+  const bitRows = clamp(Math.floor((H - 70) / 17), 6, 16)
   for (let c = 0; c < 6; c++) {
     const x = pw + pw * 0.1 + c * colW
-    for (let r = 0; r < 16; r++) {
+    for (let r = 0; r < bitRows; r++) {
       const seed = Math.floor(t * 3 + c * 3 + r)
       const h = (seed * 2654435761) % 97
       const hot = h % 23 === 0
@@ -1211,9 +1447,11 @@ function drawChrome(P) {
   grd.addColorStop(1, rgba(P.accent, 0))
   ctx.fillStyle = grd
   ctx.fillRect(0, sy - 26, W, 52)
-  ctx.fillStyle = rgba(P.dim, 0.7)
-  ctx.font = font(10)
-  ctx.fillText('JKZ·VIS // 08', W - 92, H - 14)
+  if (W >= 560) {
+    ctx.fillStyle = rgba(P.dim, 0.7)
+    ctx.font = font(10)
+    ctx.fillText('JKZ·VIS // 08', W - 92, H - 14)
+  }
 }
 
 function drawScene(idx, t, alpha) {

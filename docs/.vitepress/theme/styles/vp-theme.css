@@ -109,3 +109,25 @@ html.dark .VPHero .container {
     animation: none;
   }
 }
+
+/* 宽公式与窄屏：行间公式允许横向滚动，避免撑破布局 */
+.vp-doc .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0 8px;
+}
+.vp-doc .katex-display > .katex {
+  min-width: max-content;
+}
+@media (max-width: 640px) {
+  .vp-doc .katex:not(.katex-display *) {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .vp-doc table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+}
